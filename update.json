@@ -1,5 +1,5 @@
 {
-  "versionCode": 23,
-  "versionName": "1.11.2",
-  "changelog": "1. 全新应用图标\n2. 其他细节优化"
+  "versionCode": 24,
+  "versionName": "1.11.3",
+  "changelog": "1. 启动时不再显示应用图标（开屏仅纯色背景）"
 }
