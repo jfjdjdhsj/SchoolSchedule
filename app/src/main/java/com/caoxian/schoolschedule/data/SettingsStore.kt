@@ -78,7 +78,39 @@ class SettingsStore(context: Context) {
             prefs.edit().putBoolean(KEY_AUTO_CHECK_UPDATE, value).apply()
         }
 
-    private companion object {
+    /**
+     * 主题模式：System（跟随系统）/ Light（浅色）/ Dark（深色）。
+     */
+    var themeMode: String
+        get() = prefs.getString(KEY_THEME_MODE, null) ?: "System"
+        set(value) {
+            prefs.edit().putString(KEY_THEME_MODE, value).apply()
+        }
+
+    /**
+     * 主题色：default（MIUIX 默认配色）或 Monet 种子色十六进制（如 #2C77F0）。
+     */
+    var themeColor: String
+        get() = prefs.getString(KEY_THEME_COLOR, null) ?: "default"
+        set(value) {
+            prefs.edit().putString(KEY_THEME_COLOR, value).apply()
+        }
+
+    /**
+     * 底栏玻璃引擎："prismal"（PrismalAGSL 液态玻璃，默认）/
+     * "miui"（MIUI miuix-blur 玻璃）/"off"（经典纯色底栏）。
+     * 兼容旧设置：若从未设置过且旧「底栏液态玻璃」开关为 false，则视为关闭。
+     */
+    var glassEngine: String
+        get() {
+            prefs.getString(KEY_GLASS_ENGINE, null)?.let { return it }
+            return if (prefs.getBoolean(KEY_BOTTOM_BAR_GLASS, true)) GLASS_ENGINE_PRISMAL else GLASS_ENGINE_OFF
+        }
+        set(value) {
+            prefs.edit().putString(KEY_GLASS_ENGINE, value).apply()
+        }
+
+    companion object {
         const val KEY_TIMETABLE = "timetable_id"
         const val KEY_ROUND = "round"
         const val KEY_SHOW_ALL_ROUND = "show_all_round"
@@ -86,5 +118,16 @@ class SettingsStore(context: Context) {
         const val KEY_PRIVACY_ANSWERED = "privacy_answered"
         const val KEY_BOTTOM_BAR_GLASS = "bottom_bar_glass_enabled"
         const val KEY_AUTO_CHECK_UPDATE = "auto_check_update"
+        const val KEY_THEME_MODE = "theme_mode"
+        const val KEY_THEME_COLOR = "theme_color"
+        const val KEY_GLASS_ENGINE = "glass_engine"
+
+        const val THEME_MODE_SYSTEM = "System"
+        const val THEME_MODE_LIGHT = "Light"
+        const val THEME_MODE_DARK = "Dark"
+        const val THEME_COLOR_DEFAULT = "default"
+        const val GLASS_ENGINE_PRISMAL = "prismal"
+        const val GLASS_ENGINE_MIUI = "miui"
+        const val GLASS_ENGINE_OFF = "off"
     }
 }

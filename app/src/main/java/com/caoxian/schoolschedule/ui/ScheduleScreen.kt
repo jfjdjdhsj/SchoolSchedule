@@ -61,7 +61,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.caoxian.schoolschedule.MainActivity
 import com.caoxian.schoolschedule.data.BreakPeriod
+import com.caoxian.schoolschedule.util.lens
 import com.caoxian.schoolschedule.data.Round
 import com.caoxian.schoolschedule.data.ScheduleEntry
 import com.caoxian.schoolschedule.data.SettingsStore
@@ -82,6 +84,10 @@ import com.styropyr0.prismal.drawPrismalGlass
 import com.styropyr0.prismal.effects.applyPrismalGlassEffects
 import com.styropyr0.prismal.effects.rememberPrismalAdaptiveLuminance
 import com.styropyr0.prismal.shapes.PrismalCapsule
+import top.yukonga.miuix.kmp.blur.drawBackdrop
+import top.yukonga.miuix.kmp.blur.blur
+import top.yukonga.miuix.kmp.blur.highlight.Highlight
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import com.styropyr0.prismal.specular.PrismalSpecular
 import com.styropyr0.prismal.sources.PrismalGlassLayer
 import com.styropyr0.prismal.sources.prismalGlassLayer
@@ -127,6 +133,10 @@ private val ContentInset = 12.dp
 fun ScheduleScreen(
     settings: SettingsStore,
     onConsentGiven: () -> Unit = {},
+    themeMode: String = com.caoxian.schoolschedule.data.SettingsStore.THEME_MODE_SYSTEM,
+    onThemeModeChange: (String) -> Unit = {},
+    themeColor: String = com.caoxian.schoolschedule.data.SettingsStore.THEME_COLOR_DEFAULT,
+    onThemeColorChange: (String) -> Unit = {},
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0 首页 / 1 设置
     var timetableId by remember { mutableStateOf(settings.timetableId) }
@@ -134,8 +144,8 @@ fun ScheduleScreen(
     var showAllRound by remember { mutableStateOf(settings.showAllRound) }
     // 隐私政策弹窗：仅在首次启动、尚未做任何选择时展示
     var privacyAnswered by remember { mutableStateOf(settings.privacyAnswered) }
-    // 底栏液态玻璃（设置页可开关，默认开启）
-    var glassEnabled by remember { mutableStateOf(settings.bottomBarGlassEnabled) }
+    // 底栏玻璃引擎："prismal" / "miui" / "off"（设置页可切换）
+    var glassEngine by remember { mutableStateOf(settings.glassEngine) }
     val colorScheme = MiuixTheme.colorScheme
     val density = LocalDensity.current
 
@@ -175,8 +185,20 @@ fun ScheduleScreen(
         updateController.check(silent = false)
     }
 
-    // 玻璃采样源：内容层（首页时间轴 / 设置页）绘制于此层，供底栏玻璃采样
+    // 玻璃采样源：内容层（首页时间轴 / 设置页）绘制于此层，供底栏玻璃采样。
+    // Prismal 采样源始终保留（定位按钮玻璃依赖它）；MIUI 引擎额外挂 layerBackdrop。
     val backdrop = rememberPrismalGlassLayer()
+    val miuiBackdrop = top.yukonga.miuix.kmp.blur.rememberLayerBackdrop()
+    // 应用内主题强制深浅时，同步状态栏图标颜色（浅色 / 深色 / 跟随系统）
+    LaunchedEffect(themeMode) {
+        (context as? MainActivity)?.applySystemBarStyle(
+            when (themeMode) {
+                com.caoxian.schoolschedule.data.SettingsStore.THEME_MODE_LIGHT -> false
+                com.caoxian.schoolschedule.data.SettingsStore.THEME_MODE_DARK -> true
+                else -> null
+            },
+        )
+    }
 
     // 每 30 秒刷新一次当前时刻，驱动「进行中」高亮与倒计时
     val nowMinute by produceState(initialValue = currentMinutes()) {
@@ -275,7 +297,15 @@ fun ScheduleScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .prismalGlassLayer(backdrop),
+                    .prismalGlassLayer(backdrop)
+                    // MIUI 玻璃引擎的内容采样源
+                    .then(
+                        if (glassEngine == "miui") {
+                            Modifier.layerBackdrop(miuiBackdrop)
+                        } else {
+                            Modifier
+                        },
+                    ),
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -345,16 +375,20 @@ fun ScheduleScreen(
                     } else {
                         SettingsScreen(
                             settings = settings,
-                            glassEnabled = glassEnabled,
-                            onGlassToggle = {
-                                glassEnabled = it
-                                settings.bottomBarGlassEnabled = it
+                            glassEngine = glassEngine,
+                            onGlassEngineChange = {
+                                glassEngine = it
+                                settings.glassEngine = it
                             },
                             showAllRound = showAllRound,
                             onShowAllRoundToggle = {
                                 showAllRound = it
                                 settings.showAllRound = it
                             },
+                            themeMode = themeMode,
+                            onThemeModeChange = onThemeModeChange,
+                            themeColor = themeColor,
+                            onThemeColorChange = onThemeColorChange,
                             update = updateController,
                             onCheckUpdate = { checkForUpdate() },
                             bottomPadding = BottomBarReserve,
@@ -422,12 +456,13 @@ fun ScheduleScreen(
                 }
             }
 
-            // 底部导航栏：液态玻璃（Prismal）或经典样式
+            // 底部导航栏：按引擎分派（Prismal 液态玻璃 / MIUI 玻璃 / 经典纯色）
             BottomBar(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
-                glassEnabled = glassEnabled,
+                engine = glassEngine,
                 backdrop = backdrop,
+                miuiBackdrop = miuiBackdrop,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
 
@@ -467,21 +502,32 @@ fun ScheduleScreen(
 }
 
 /**
- * 底部导航栏：首页 / 设置。
- *
- * 玻璃开启时为 Prismal 液态玻璃胶囊（API 33+ AGSL 折射，31–32 RenderEffect
- * 模糊，25–30 磨砂降级，点击即时切换）；关闭时为经典纯色底栏。
+ * 底部导航栏：首页 / 设置。按玻璃引擎分派：
+ *  - prismal：PrismalAGSL 液态玻璃胶囊（AGSL 折射，31–32 模糊，25–30 磨砂）；
+ *  - miui：MIUI miuix-blur 玻璃（drawBackdrop + blur + lens 折射 + Highlight 高光）；
+ *  - off：经典半透明纯色底栏。
  */
 @Composable
 private fun BottomBar(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    glassEnabled: Boolean,
+    engine: String,
     backdrop: PrismalGlassLayer,
+    miuiBackdrop: top.yukonga.miuix.kmp.blur.LayerBackdrop,
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MiuixTheme.colorScheme
-    if (glassEnabled) {
+    if (engine == "miui" && android.os.Build.VERSION.SDK_INT >= 33) {
+        MiuiGlassBottomBar(
+            selectedTab = selectedTab,
+            onTabSelected = onTabSelected,
+            backdrop = miuiBackdrop,
+            modifier = modifier,
+        )
+    } else if (engine == "miui") {
+        // Android 13 以下不支持 miuix-blur 的运行时着色器，回落经典底栏
+        ClassicBottomBarContent(selectedTab, onTabSelected, modifier)
+    } else if (engine == "prismal") {
         GlassBottomBar(
             selectedTab = selectedTab,
             onTabSelected = onTabSelected,
@@ -489,44 +535,52 @@ private fun BottomBar(
             modifier = modifier,
         )
     } else {
-        // 经典底栏（v1.8.1 沉浸式）：半透明背景，内容在底栏与手势指示区后
-        // 隐约滚动；顶部发丝分隔线 + 主色选中态。手势指示区同样透出内容，
-        // 与液态玻璃底栏的沉浸观感保持一致。
-        Box(
-            modifier = modifier
+        ClassicBottomBarContent(selectedTab, onTabSelected, modifier)
+    }
+}
+
+/** 经典底栏（v1.8.1 沉浸式）：半透明背景，内容在底栏与手势指示区后隐约滚动 */
+@Composable
+private fun ClassicBottomBarContent(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MiuixTheme.colorScheme
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colorScheme.surface.copy(alpha = 0.92f)),
+    ) {
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
-                .background(colorScheme.surface.copy(alpha = 0.92f)),
+                .navigationBarsPadding(),
         ) {
-            Column(
+            // 顶部分隔线
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding(),
+                    .height(0.5.dp)
+                    .background(colorScheme.onSurface.copy(alpha = 0.08f)),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
             ) {
-                // 顶部分隔线
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(0.5.dp)
-                        .background(colorScheme.onSurface.copy(alpha = 0.08f)),
+                ClassicBottomTab(
+                    selected = selectedTab == 0,
+                    icon = HomeIcon,
+                    label = "首页",
+                    onClick = { onTabSelected(0) },
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                ) {
-                    ClassicBottomTab(
-                        selected = selectedTab == 0,
-                        icon = HomeIcon,
-                        label = "首页",
-                        onClick = { onTabSelected(0) },
-                    )
-                    ClassicBottomTab(
-                        selected = selectedTab == 1,
-                        icon = SettingsIcon,
-                        label = "设置",
-                        onClick = { onTabSelected(1) },
-                    )
-                }
+                ClassicBottomTab(
+                    selected = selectedTab == 1,
+                    icon = SettingsIcon,
+                    label = "设置",
+                    onClick = { onTabSelected(1) },
+                )
             }
         }
     }
@@ -713,6 +767,137 @@ private fun GlassBottomBar(
     }
 }
 
+/**
+ * MIUI 玻璃底栏：基于 miuix-blur（drawBackdrop + blur + lens 折射 + Highlight 高光）。
+ * 交互与 Prismal 版一致：按下增压、水平拖动切页、触觉反馈。
+ */
+@Composable
+private fun MiuiGlassBottomBar(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    backdrop: top.yukonga.miuix.kmp.blur.LayerBackdrop,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MiuixTheme.colorScheme
+    val view = LocalView.current
+    val tabsCount = 2
+    val dark = LocalAppDarkTheme.current
+
+    // 玻璃增压进度：按下 → 0.35；拖动 → 1；松手 → 0（驱动模糊/折射增强与缩放）
+    val glassBoost = remember { Animatable(0f) }
+    val boostSpring = spring<Float>(dampingRatio = 0.7f, stiffness = 600f)
+    val gestureScope = rememberCoroutineScope()
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 12.dp),
+    ) {
+        // 玻璃胶囊本体
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .graphicsLayer {
+                    val s = 1f + 0.03f * glassBoost.value
+                    scaleX = s
+                    scaleY = s
+                }
+                .drawBackdrop(
+                    backdrop = backdrop,
+                    shape = { RoundedCornerShape(50) },
+                    effects = {
+                        blur(18f + 10f * glassBoost.value)
+                        lens(
+                            refractionHeight = 24.dp.toPx(),
+                            refractionAmount = 20.dp.toPx(),
+                            chromaticAberration = 0.12f + 0.08f * glassBoost.value,
+                        )
+                    },
+                    highlight = {
+                        if (dark) {
+                            Highlight.GlassStrokeMiddleDark
+                        } else {
+                            Highlight.GlassStrokeMiddleLight
+                        }
+                    },
+                ),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    GlassTabContent(selected = selectedTab == 0, icon = HomeIcon, label = "首页")
+                }
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    GlassTabContent(selected = selectedTab == 1, icon = SettingsIcon, label = "设置")
+                }
+            }
+        }
+
+        // 手势层：与 Prismal 版交互一致（短按切换 / 水平拖动实时切换 / 触觉反馈）
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val slop = viewConfiguration.touchSlop
+                        val tabWidth = size.width / tabsCount.toFloat()
+                        gestureScope.launch { glassBoost.animateTo(0.35f, boostSpring) }
+
+                        var dragging = false
+                        var totalDx = 0f
+                        var totalDy = 0f
+                        var lastIndex = -1
+                        var lastX = down.position.x
+
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                            if (!change.pressed) break
+                            lastX = change.position.x
+                            val delta = change.position - change.previousPosition
+
+                            if (!dragging) {
+                                totalDx += delta.x
+                                totalDy += delta.y
+                                if (abs(totalDx) > slop && abs(totalDx) > abs(totalDy)) {
+                                    dragging = true
+                                    gestureScope.launch { glassBoost.animateTo(1f, boostSpring) }
+                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                } else if (abs(totalDy) > slop) {
+                                    break
+                                }
+                            }
+
+                            if (dragging) {
+                                val index =
+                                    (change.position.x / tabWidth).toInt().coerceIn(0, tabsCount - 1)
+                                if (index != lastIndex) {
+                                    lastIndex = index
+                                    onTabSelected(index)
+                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                }
+                                change.consume()
+                            }
+                        }
+
+                        val index = (lastX / tabWidth).toInt().coerceIn(0, tabsCount - 1)
+                        onTabSelected(index)
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        gestureScope.launch { glassBoost.animateTo(0f, boostSpring) }
+                    }
+                },
+        )
+    }
+}
+
 /** 玻璃底栏标签内容：图标 + 文字（选中态主色） */
 @Composable
 private fun GlassTabContent(selected: Boolean, icon: ImageVector, label: String) {
@@ -781,7 +966,8 @@ private fun ClockText(modifier: Modifier = Modifier) {
     Text(
         text = text,
         modifier = modifier,
-        color = if (isSystemInDarkTheme()) Color.White else Color.Black,
+        // 跟随应用内主题的深浅模式（区别于系统主题）
+        color = if (LocalAppDarkTheme.current) Color.White else Color.Black,
         fontSize = 18.sp,
     )
 }

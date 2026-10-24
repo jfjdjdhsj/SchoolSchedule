@@ -8,6 +8,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.caoxian.schoolschedule.data.SettingsStore
 import com.caoxian.schoolschedule.ui.ScheduleScreen
 import com.caoxian.schoolschedule.ui.SchoolScheduleTheme
@@ -28,16 +32,37 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var reporter: DeviceReporter
 
+    /** 应用内主题强制深浅（null = 跟随系统）；onConfigurationChanged 时保持 */
+    private var forcedDark: Boolean? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applySystemBarStyle()
         val settingsStore = SettingsStore(applicationContext)
         reporter = DeviceReporter(applicationContext, settingsStore)
         setContent {
-            SchoolScheduleTheme {
+            // 主题设置状态：设置页修改后经回调写回并同步状态栏图标颜色
+            var themeMode by remember { mutableStateOf(settingsStore.themeMode) }
+            var themeColor by remember { mutableStateOf(settingsStore.themeColor) }
+            SchoolScheduleTheme(themeMode, themeColor) {
                 ScheduleScreen(
                     settings = settingsStore,
                     onConsentGiven = { reporter.report("startup") },
+                    themeMode = themeMode,
+                    onThemeModeChange = { mode ->
+                        themeMode = mode
+                        settingsStore.themeMode = mode
+                        applySystemBarStyle(forceDark = when (mode) {
+                            com.caoxian.schoolschedule.data.SettingsStore.THEME_MODE_LIGHT -> false
+                            com.caoxian.schoolschedule.data.SettingsStore.THEME_MODE_DARK -> true
+                            else -> null
+                        })
+                    },
+                    themeColor = themeColor,
+                    onThemeColorChange = { color ->
+                        themeColor = color
+                        settingsStore.themeColor = color
+                    },
                 )
             }
         }
@@ -56,16 +81,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 系统深浅模式切换时刷新状态栏 / 导航栏图标颜色
-        applySystemBarStyle()
+        // 系统深浅模式切换时刷新状态栏 / 导航栏图标颜色（保持应用内主题的强制深浅）
+        applySystemBarStyle(forcedDark)
     }
 
-    /** 透明系统栏 + 图标颜色随系统深浅模式自动切换 */
-    private fun applySystemBarStyle() {
+    /**
+     * 透明系统栏 + 图标颜色随深浅模式切换。
+     * @param forceDark 应用内主题强制深浅时指定（null = 跟随系统）
+     */
+    fun applySystemBarStyle(forceDark: Boolean? = null) {
+        forcedDark = forceDark
         val style = SystemBarStyle.auto(
             Color.TRANSPARENT,
             Color.TRANSPARENT,
-        ) { resources: Resources -> resources.isSystemDarkMode() }
+        ) { resources: Resources ->
+            forceDark ?: resources.isSystemDarkMode()
+        }
         enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
     }
 
