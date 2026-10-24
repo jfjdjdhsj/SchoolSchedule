@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- 应用内更新：下载新版本 APK 后拉起安装（Android 8.0+ 需用户授权「安装未知应用」） -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- 桌面小组件：开机后恢复分钟级刷新 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -36,6 +38,38 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 桌面小组件（4×1 单行 / 4×2 详细）：分钟级刷新，开机自恢复 -->
+        <receiver
+            android:name=".widget.ScheduleWidget4x1"
+            android:exported="false"
+            android:label="@string/widget_4x1_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.caoxian.schoolschedule.WIDGET_TICK" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_4x1_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.ScheduleWidget4x2"
+            android:exported="false"
+            android:label="@string/widget_4x2_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.caoxian.schoolschedule.WIDGET_TICK" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_4x2_info" />
+        </receiver>
     </application>
 
 </manifest>

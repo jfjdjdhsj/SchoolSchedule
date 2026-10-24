@@ -2,4 +2,10 @@
 <resources>
     <!-- 启动图标背景色（HyperOS 蓝） -->
     <color name="ic_launcher_background">#2C77F0</color>
+
+    <!-- 桌面小组件（浅色模式） -->
+    <color name="widget_bg">#F0FFFFFF</color>
+    <color name="widget_text">#FF1F2329</color>
+    <color name="widget_sub">#FF6B7280</color>
+    <color name="widget_accent">#FF2C77F0</color>
 </resources>
