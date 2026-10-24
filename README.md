@@ -72,9 +72,14 @@ SchoolSchedule/
 ├── build.gradle.kts               # 顶层构建文件
 ├── gradle/libs.versions.toml      # 版本目录
 ├── gradlew                        # Gradle Wrapper
+├── update.json                    # 应用内更新元数据（versionCode / 更新日志）
 ├── keystore/schoolschedule.p12    # 发布签名密钥（本地私有，勿上传公开仓库）
+├── server/                        # 统计后台服务端（纯 Python 标准库，部署见 server/README.md）
+│   ├── server.py                  # 后端服务（API + 管理网页；密钥全部外置 config.json）
+│   ├── config.example.json        # 配置模板（api_key / page_token / admin_password）
+│   └── sjb.service                # systemd 服务单元
 └── app/
-    ├── build.gradle.kts           # 应用模块构建配置
+    ├── build.gradle.kts           # 应用模块构建配置（签名密码经 local.properties 注入）
     └── src/main/
         ├── AndroidManifest.xml
         ├── java/com/caoxian/schoolschedule/
@@ -86,21 +91,22 @@ SchoolSchedule/
         │   │   ├── BreakCalculator.kt         # 由时间表推导休息段
         │   │   └── SettingsStore.kt           # SharedPreferences 持久化
         │   ├── ui/
-        │   │   ├── Theme.kt                   # MIUIX 主题
+        │   │   ├── Theme.kt                   # MIUIX 主题（深浅模式 + Monet 主题色）
         │   │   ├── ScheduleStatus.kt          # 实时状态计算
         │   │   ├── ScheduleScreen.kt          # 主界面（首页/设置切换、底栏、时间轴）
-        │   │   ├── SettingsScreen.kt          # 设置页（外观/显示/隐私/关于）
+        │   │   ├── SettingsScreen.kt          # 设置页（外观/显示/隐私/更新/反馈/关于）
         │   │   ├── NavIcons.kt                # 底栏自绘图标（首页 / 设置）
         │   │   └── LocateIcon.kt              # 自绘定位图标
         │   └── util/
         │       ├── TimeUtils.kt               # 时间格式化工具
         │       ├── RoundVisibility.kt         # 轮次显隐规则
-        │       ├── BackendConfig.kt           # 统计后端接入配置
-        │       └── DeviceReporter.kt          # 设备使用信息上报（节流 + 失败重传）
+        │       ├── UpdateConfig.kt            # 应用内更新接入配置（GitHub Releases）
+        │       ├── UpdateManager.kt           # 检查更新 / 下载 / 安装（加速源）
+        │       ├── DeviceReporter.kt          # 设备使用信息上报（节流 + 失败重传）
+        │       └── FeedbackSender.kt          # 用户文字反馈提交
         └──res/
-            ├── values/、values-night/         # 字符串、主题
-            ├── drawable/ic_launcher_foreground.xml
-            └── mipmap-anydpi-v26/             # 自适应启动图标
+            ├── values/、values-night/         # 字符串、主题（含 API 31+ 启动画面）
+            └── mipmap-*/                     # 自适应启动图标（五档密度）
 ```
 
 ## 构建方法
@@ -166,7 +172,9 @@ SchoolSchedule/
 | 使用情况 | 事件类型与发生时刻、当前查看的时间表与轮次 |
 | 环境信息 | 应用版本、网络类型、电量、IP（由服务器记录） |
 
-上报服务端部署在学校自有服务器上（纯 Python 标准库实现，systemd 守护，数据存 SQLite），仅接收匿名统计并存储；服务端地址与鉴权密钥仅在应用内配置（`util/BackendConfig.kt`），管理页面需管理密码进入，相关凭据不对外公开。
+上报服务端部署在学校自有服务器上（纯 Python 标准库实现，systemd 守护，数据存 SQLite），仅接收匿名统计并存储；服务端地址与鉴权密钥仅在应用内配置（构建时注入），管理页面需管理密码进入，相关凭据不对外公开。
+
+> 服务端源码与部署文档见 [`server/`](server/README.md)（本仓库已脱敏：所有密钥 / 密码均通过服务端 `config.json` 外置，不进仓库）。
 
 ## 底部导航与液态玻璃（v1.3）
 
