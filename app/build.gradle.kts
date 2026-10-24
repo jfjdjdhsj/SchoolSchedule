@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     // AGP 9.0 起内置 Kotlin 支持，无需再应用 org.jetbrains.kotlin.android 插件
     alias(libs.plugins.android.application)
@@ -15,17 +17,39 @@ android {
         targetSdk = 37
         versionCode = 21
         versionName = "1.11.0"
+
+        // 匿名统计后端配置：地址与密钥放在本地 local.properties（不进仓库）
+        val localProps = Properties().apply {
+            val f = rootProject.file("local.properties")
+            if (f.exists()) f.inputStream().use { load(it) }
+        }
+        buildConfigField(
+            "String",
+            "STATS_BASE_URL",
+            "\"${localProps.getProperty("stats.baseUrl") ?: ""}\"",
+        )
+        buildConfigField(
+            "String",
+            "STATS_API_KEY",
+            "\"${localProps.getProperty("stats.apiKey") ?: ""}\"",
+        )
     }
 
-    // 发布签名配置（密钥文件位于项目根目录 keystore/schoolschedule.p12）
-    // 正式对外发布前请自行重新生成密钥并修改此处密码，切勿将密钥提交到公开仓库
+    // 发布签名配置：密码等敏感信息放在本地 local.properties（已被 .gitignore 排除，
+    // 不进仓库）。缺少配置时构建 Debug 可用，Release 需先在 local.properties 写入：
+    //   keystore.password=你的密码
+    //   keystore.alias=schoolschedule
     signingConfigs {
         create("release") {
+            val localProps = Properties().apply {
+                val f = rootProject.file("local.properties")
+                if (f.exists()) f.inputStream().use { load(it) }
+            }
             storeFile = rootProject.file("keystore/schoolschedule.p12")
             storeType = "pkcs12"
-            storePassword = "123456"
-            keyAlias = "schoolschedule"
-            keyPassword = "123456"
+            storePassword = localProps.getProperty("keystore.password") ?: ""
+            keyAlias = localProps.getProperty("keystore.alias") ?: "schoolschedule"
+            keyPassword = localProps.getProperty("keystore.password") ?: ""
         }
     }
 
@@ -51,6 +75,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

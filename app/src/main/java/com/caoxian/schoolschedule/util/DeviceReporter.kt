@@ -141,12 +141,12 @@ class DeviceReporter(
     private fun post(payload: JSONObject): Boolean {
         var conn: HttpURLConnection? = null
         return try {
-            conn = URL("${BackendConfig.BASE_URL}/api/report").openConnection()
+            conn = URL("${com.caoxian.schoolschedule.BuildConfig.STATS_BASE_URL}/api/report").openConnection()
                 as HttpURLConnection
             conn.requestMethod = "POST"
             conn.connectTimeout = 8_000
             conn.readTimeout = 8_000
-            conn.setRequestProperty("X-Api-Key", BackendConfig.API_KEY)
+            conn.setRequestProperty("X-Api-Key", com.caoxian.schoolschedule.BuildConfig.STATS_API_KEY)
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             conn.doOutput = true
             conn.outputStream.use { out ->

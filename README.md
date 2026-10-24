@@ -2,16 +2,21 @@
 
 基于 [MIUIX](https://compose-miuix-ui.github.io/miuix/zh_CN/)（Compose Multiplatform 界面组件库）开发的安卓作息时间表应用，内置**冬季 / 夏季两套作息时间表，支持一键切换**。当前版本 **v1.11.0**（versionCode 21）。
 
-## 版本发布流程（GitHub Actions 自动构建）
+## 版本发布流程（本地构建 + gh 发布）
 
-1. 本地改好版本号（`app/build.gradle.kts` 的 versionCode / versionName，同步 `update.json`）并构建验证；
-2. 提交代码：`git add -A && git commit -m "..."`；
-3. 打附注标签（**标签内容 = 更新日志**）：`git tag -a v1.12.0 -m "1. xxx" -m "2. xxx"`；
-4. 推送：`git push origin main --tags`；
-5. GitHub Actions（`.github/workflows/release.yml`）自动构建 Release APK 并发布到 Releases（更新日志 = 标签内容，APK 资产名 `SchoolSchedule-v{版本}-release.apk`）；
-6. APP 内「设置 → 检测更新」即可发现新版本：检查走 GitHub Releases API（回退 jsDelivr 的 update.json），下载走加速源（ghfast / gh-proxy，直连兜底）。
-
-> CI 签名：仓库 Secret `KEYSTORE_BASE64` 存放签名密钥的 base64，构建时解码为 `keystore/schoolschedule.p12`，与本地签名一致，可覆盖安装。密钥文件不进仓库（.gitignore 已排除）。
+1. 本地改好版本号（`app/build.gradle.kts` 的 versionCode / versionName，同步 `update.json`）并构建验证：
+   `./gradlew :app:assembleRelease`
+2. 提交代码：`git add -A && git commit -m "..." && git push origin main`
+3. 打附注标签（**标签内容 = 更新日志**）并推送：
+   `git tag -a v1.12.0 -m "1. xxx" -m "2. xxx" && git push origin v1.12.0`
+4. 用 GitHub CLI 发布 Release（更新日志 = 标签内容）：
+   ```bash
+   gh release create v1.12.0 \
+     "app/build/outputs/apk/release/app-release.apk#SchoolSchedule-v1.12.0-release.apk" \
+     --title "校园作息表 v1.12.0" \
+     --notes "$(git tag -l --format='%(contents)' v1.12.0)"
+   ```
+5. APP 内「设置 → 检测更新」即可发现新版本：检查走 GitHub Releases API（回退 jsDelivr 的 update.json），下载走加速源（ghfast / gh-proxy，直连兜底）。
 
 数据来源为学校官方 Excel 作息表：
 
@@ -133,17 +138,16 @@ SchoolSchedule/
 | --- | --- |
 | 密钥文件 | `keystore/schoolschedule.p12`（PKCS12，RSA 2048） |
 | 密钥别名 | `schoolschedule` |
-| 密钥库 / 密钥密码 | `123456` |
-| 有效期 | 2026-10-16 至 2056-10-08（30 年） |
-| 证书 SHA-1 | `49:91:1A:A3:E2:ED:E3:D8:43:3A:88:F9:0D:95:5B:B4:7C:CC:49:20` |
+| 密钥库 / 密钥密码 | 存放在本地 `local.properties`（`keystore.password` / `keystore.alias`），**不进仓库** |
+| 证书 SHA-256 | `aaea6cc05decc964c170e98f8866ad7daf304a4bf0a6f7b242111c1705f81f81` |
 
-> **注意**：该密钥为演示用途，密码已明文写在构建脚本中。若用于正式对外发布，请用以下命令重新生成密钥并妥善保管（丢失密钥将无法为应用提供升级）：
+> **注意**：密钥文件 `keystore/*.p12` 与密码配置均已被 `.gitignore` 排除，请勿提交到仓库或分享给他人。丢失密钥将无法为应用提供升级。若需重新生成密钥：
 > ```bash
 > keytool -genkeypair -v -keystore keystore/schoolschedule.p12 -storetype pkcs12 \
 >   -keyalg RSA -keysize 2048 -validity 10950 -alias schoolschedule \
 >   -dname "CN=你的名称, OU=单位, O=组织, L=城市, ST=省份, C=CN"
 > ```
-> 同时修改 `app/build.gradle.kts` 中的密码，并将密钥排除在版本控制之外（.gitignore 已忽略 `keystore/*.p12`）。
+> 同时在 `local.properties` 更新 `keystore.password`。
 
 ## 匿名使用统计与隐私（v1.2）
 
@@ -162,15 +166,7 @@ SchoolSchedule/
 | 使用情况 | 事件类型与发生时刻、当前查看的时间表与轮次 |
 | 环境信息 | 应用版本、网络类型、电量、IP（由服务器记录） |
 
-服务端部署在学校服务器 `103.194.107.86:18081`（纯 Python 标准库实现，systemd 守护，数据存 SQLite）：
-
-- 接收上报：`POST /api/report`（`X-Api-Key` 鉴权）
-- 查询接口：`GET /api/devices`、`GET /api/records`、`GET /api/stats`
-- 管理页面：`http://103.194.107.86:18081/`（打开后需输入管理密码 **114524** 进入，登录态保持 30 天，页面内可退出登录）
-
-> 改密码：修改服务器 `/sjb/config.json` 中的 `admin_password` 字段后 `systemctl restart sjb` 即可。
->
-> 重新部署：将 `server.py` 上传至服务器 `/sjb/` 目录，`systemctl restart sjb` 即可；密钥与令牌均在 `/sjb/config.json`。
+上报服务端部署在学校自有服务器上（纯 Python 标准库实现，systemd 守护，数据存 SQLite），仅接收匿名统计并存储；服务端地址与鉴权密钥仅在应用内配置（`util/BackendConfig.kt`），管理页面需管理密码进入，相关凭据不对外公开。
 
 ## 底部导航与液态玻璃（v1.3）
 
