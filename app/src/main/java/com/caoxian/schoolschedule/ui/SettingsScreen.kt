@@ -2,12 +2,14 @@ package com.caoxian.schoolschedule.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,21 +32,27 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
 import com.caoxian.schoolschedule.data.SettingsStore
+import com.caoxian.schoolschedule.util.FeedbackSender
 import com.caoxian.schoolschedule.util.UpdateController
 import com.caoxian.schoolschedule.util.UpdateState
+import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Album
 import top.yukonga.miuix.kmp.icon.extended.Community
+import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.Lock
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Show
@@ -95,6 +103,7 @@ fun SettingsScreen(
     // 弹窗
     var showModeDialog by remember { mutableStateOf(false) }
     var showColorDialog by remember { mutableStateOf(false) }
+    var showFeedbackDialog by remember { mutableStateOf(false) }
     var showOssDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
@@ -250,6 +259,49 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 8.dp),
             )
             Card(modifier = Modifier.fillMaxWidth()) {
+                // 问题反馈入口：纯文字反馈（类型 + 正文 + 可选联系方式）
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showFeedbackDialog = true }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Icon(
+                        imageVector = MiuixIcons.Edit,
+                        contentDescription = "问题反馈",
+                        tint = colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .offset(y = (-1).dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "问题反馈",
+                            color = colorScheme.onSurface,
+                            fontSize = 15.sp,
+                        )
+                        Text(
+                            text = "遇到问题或有建议？告诉我们，仅支持文字",
+                            color = colorScheme.onSurfaceVariantSummary,
+                            fontSize = 11.sp,
+                        )
+                    }
+                    Spacer(
+                        modifier = Modifier
+                            .width(12.dp)
+                            .align(Alignment.CenterVertically),
+                    )
+                    Text(
+                        text = "›",
+                        color = colorScheme.onSurfaceVariantSummary,
+                        fontSize = 18.sp,
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                    )
+                }
+            }
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 // 开源库入口：点击弹窗展示 APP 使用的开源组件（图标与标题首行对齐）
                 Row(
                     modifier = Modifier
@@ -317,6 +369,11 @@ fun SettingsScreen(
     // 开源库弹窗：展示 APP 使用的开源组件与许可
     if (showOssDialog) {
         OssLibrariesDialog(onDismiss = { showOssDialog = false })
+    }
+
+    // 问题反馈弹窗（纯文字：类型 + 正文 + 可选联系方式）
+    if (showFeedbackDialog) {
+        FeedbackDialog(onDismiss = { showFeedbackDialog = false })
     }
 
     // 主题模式弹窗
@@ -447,6 +504,108 @@ private data class Option(
     val dot: Color? = null,
     val sub: String? = null,
 )
+
+/**
+ * 问题反馈弹窗（专业版，仅文字）：
+ * 类型三选一 + 正文（≤1000 字，实时计数）+ 联系方式（选填）。
+ * 提交走 [FeedbackSender]（X-Api-Key 鉴权），成功后 Toast 并关闭。
+ */
+@Composable
+private fun FeedbackDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val colorScheme = MiuixTheme.colorScheme
+    val categories = listOf("bug" to "问题反馈", "suggestion" to "功能建议", "other" to "其他")
+    var category by remember { mutableStateOf("bug") }
+    var content by remember { mutableStateOf("") }
+    var contact by remember { mutableStateOf("") }
+    var submitting by remember { mutableStateOf(false) }
+    val canSubmit = !submitting && content.trim().length >= 5
+
+    val body: @Composable () -> Unit = {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+            // 类型选择（三选一胶囊）
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                categories.forEach { (value, label) ->
+                    val selected = value == category
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (selected) colorScheme.primary
+                                else colorScheme.secondaryContainer
+                            )
+                            .clickable { category = value }
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (selected) Color.White else colorScheme.onSurface,
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            TextField(
+                value = content,
+                onValueChange = {
+                    if (it.length <= FeedbackSender.MAX_CONTENT) content = it
+                },
+                label = "请描述遇到的问题或建议（必填，至少 5 字）",
+                maxLines = 5,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${content.length}/${FeedbackSender.MAX_CONTENT}",
+                color = colorScheme.onSurfaceVariantSummary,
+                fontSize = 11.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.End,
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            TextField(
+                value = contact,
+                onValueChange = {
+                    if (it.length <= FeedbackSender.MAX_CONTACT) contact = it
+                },
+                label = "联系方式（选填，如邮箱 / QQ）",
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    submitting = true
+                    val trimmed = content.trim()
+                    val trimmedContact = contact.trim()
+                    FeedbackSender.send(context, category, trimmed, trimmedContact) { ok ->
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            submitting = false
+                            Toast.makeText(
+                                context,
+                                if (ok) "反馈已提交，感谢你的支持！" else "提交失败，请检查网络后重试",
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                            if (ok) onDismiss()
+                        }
+                    }
+                },
+                enabled = canSubmit,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = if (submitting) "提交中…" else "提交反馈", fontSize = 15.sp)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+    OverlayDialog(
+        show = true,
+        title = "问题反馈",
+        onDismissRequest = onDismiss,
+        content = body,
+    )
+}
 
 /**
  * 单选弹窗：列表选择，当前项带 ✓ 与主色高亮。

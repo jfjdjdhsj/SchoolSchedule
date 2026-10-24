@@ -1,5 +1,5 @@
 {
-  "versionCode": 27,
-  "versionName": "1.12.1",
-  "changelog": "1. 移除 MIUI 玻璃引擎（体验不佳），底栏回归 Prismal 液态玻璃开关\n2. 主题设置保留：深浅模式与 Monet 主题色"
+  "versionCode": 28,
+  "versionName": "1.12.2",
+  "changelog": "1. 新增问题反馈：设置 → 关于 → 问题反馈（仅文字）\n2. 后台新增用户反馈管理与版本分布、活跃趋势展示"
 }
