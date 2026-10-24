@@ -89,28 +89,10 @@ fun SettingsScreen(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
+            .padding(top = 6.dp)
             .padding(bottom = bottomPadding),
     ) {
-        // 标题区：作为滚动内容的一部分，随上下滑动一起消失 / 出现
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 26.dp)
-                .padding(top = 10.dp, bottom = 12.dp),
-        ) {
-            Text(
-                text = "设置",
-                color = colorScheme.onSurface,
-                fontSize = 32.sp,
-            )
-            Text(
-                text = "外观、显示与数据设置",
-                color = colorScheme.onSurfaceVariantSummary,
-                fontSize = 14.sp,
-            )
-        }
-
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
             SmallTitle(
                 text = "外观",
