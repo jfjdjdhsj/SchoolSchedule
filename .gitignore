@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+
+# 系统
+.DS_Store
+
+# 签名密钥（本地私有，勿提交到公开仓库）
+keystore/*.p12
+keystore/*.jks
+
+# 构建产物
+*.apk
+*.aab
+*.ap_
+*.dex

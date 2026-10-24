@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 白色表盘 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,33 C46.27,33 40,39.27 40,47 C40,54.73 46.27,61 54,61 C61.73,61 68,54.73 68,47 C68,39.27 61.73,33 54,33 Z" />
+    <!-- 时针（指向 8 点方向） -->
+    <path
+        android:strokeColor="#3482FF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,47 L50.5,51" />
+    <!-- 分针（指向 2 点方向） -->
+    <path
+        android:strokeColor="#3482FF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,47 L60.5,43.5" />
+    <!-- 中心点 -->
+    <path
+        android:fillColor="#3482FF"
+        android:pathData="M54,45.6 C55.04,45.6 55.9,46.46 55.9,47.5 C55.9,48.54 55.04,49.4 54,49.4 C52.96,49.4 52.1,48.54 52.1,47.5 C52.1,46.46 52.96,45.6 54,45.6 Z" />
+    <!-- 12 点刻度 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M53.2,32.6 L54.8,32.6 L54.8,36.4 L53.2,36.4 Z" />
+    <!-- 3 点刻度 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M71.6,46.2 L71.6,47.8 L67.8,47.8 L67.8,46.2 Z" />
+</vector>
