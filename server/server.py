@@ -542,6 +542,8 @@ tr:hover td {{ background:#f8fafc; }}
 .bar-num {{ width:86px; text-align:right; font-size:12px; color:var(--txt); flex:none; }}
 a.dlink {{ color:var(--pri); text-decoration:none; }}
 td.wrap {{ white-space:normal; min-width:220px; max-width:480px; }}
+button.danger {{ background:#fee2e2; color:#b91c1c; border:none; border-radius:6px; padding:4px 12px; font-size:12px; cursor:pointer; }}
+button.danger:hover {{ background:#fecaca; }}
 </style>
 </head>
 <body>
@@ -577,7 +579,7 @@ td.wrap {{ white-space:normal; min-width:220px; max-width:480px; }}
 </table>
 </div>
 <div class="panel">
-<h2>最近上报记录（{len(records)}）</h2>
+<h2>最近上报记录（{len(records)}）<form method="post" action="/clear-records" style="display:inline;margin-left:10px;vertical-align:middle;" onsubmit="return confirm('确定清空全部上报记录？此操作不可恢复（设备列表与反馈保留）')"><button class="danger" type="submit">清空记录</button></form></h2>
 <table>
 <thead><tr><th>时间</th><th>设备ID</th><th>事件</th><th>时间表/轮次</th><th>版本</th><th>网络</th><th>电量</th><th>IP</th></tr></thead>
 <tbody>{rec_rows or '<tr><td colspan="8" class="empty">暂无数据</td></tr>'}</tbody>
@@ -757,6 +759,24 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"ok": False, "error": str(e)}, status=400)
             except Exception as e:
                 self._send_json({"ok": False, "error": "服务器内部错误: %s" % e}, status=500)
+            return
+
+        if path == "/clear-records":
+            # 清空上报记录（管理页同鉴权；设备列表与反馈保留）
+            cookies = parse_cookies(self)
+            if cookies.get(COOKIE_NAME) != CONFIG.get("admin_password"):
+                self._send_html(render_login_page(), status=403)
+                return
+            conn = get_db()
+            try:
+                conn.execute("DELETE FROM records")
+                conn.commit()
+            finally:
+                conn.close()
+            self.send_response(302)
+            self.send_header("Location", "/")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
             return
 
         if path == "/api/feedback":
