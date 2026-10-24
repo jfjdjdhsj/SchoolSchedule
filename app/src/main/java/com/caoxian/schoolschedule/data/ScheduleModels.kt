@@ -41,6 +41,13 @@ data class ScheduleEntry(
     /** 计算「进行中」状态时的结束边界；单点活动按 10 分钟展示窗口处理 */
     val endForStatus: Int
         get() = endMinute ?: (startMinute + 10)
+
+    /**
+     * 展示用名称：非「全部」轮次的节点带轮次前缀（如「一轮 早饭」）。
+     * 与首页状态卡片 / 时间轴的 entryLabel 逻辑一致。
+     */
+    val label: String
+        get() = if (round == Round.ALL) activity else "${round.displayName} $activity"
 }
 
 /**

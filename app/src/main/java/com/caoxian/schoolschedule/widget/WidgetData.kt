@@ -11,12 +11,14 @@ import com.caoxian.schoolschedule.util.currentSecondOfDay
 import com.caoxian.schoolschedule.util.effectiveRound
 import com.caoxian.schoolschedule.util.fmtCountdown
 import com.caoxian.schoolschedule.util.fmtTime
+import com.caoxian.schoolschedule.util.formatDuration
 
 /**
  * 桌面小组件数据构建：纯函数，供 WidgetProvider 渲染 RemoteViews。
  *
- * 逻辑与首页一致：按设置的时间表 + 轮次过滤排序节点 → 推导休息段 →
- * computeStatus 计算当前状态 → 生成三行文本（状态 / 详情 / 倒计时）。
+ * 文案与首页「现在状态卡片」（NowStatusCard）逐行对齐：
+ * 进行中 / 休息中 / 即将开始 / 即将休息 / 今日作息已结束，
+ * 倒计时使用秒级精度（比 APP 的分钟级更细，信息不冲突）。
  */
 object WidgetData {
 
@@ -32,6 +34,7 @@ object WidgetData {
         val timetable = allTimetables.firstOrNull { it.id == settings.timetableId }
             ?: allTimetables.first()
         val round = effectiveRound(settings.round, settings.showAllRound)
+        // 与首页一致：过滤轮次 + 排序
         val entries = timetable.entries
             .filter { round == Round.ALL || it.round == round || it.round == Round.ALL }
             .sortedWith(compareBy({ it.startMinute }, { it.round.ordinal }))
@@ -40,53 +43,60 @@ object WidgetData {
         val status = computeStatus(entries, breaks, nowMinute)
         val nowSec = currentSecondOfDay()
 
-        // 进行中
-        status.currentEntries.firstOrNull()?.let { entry ->
-            val remainingSec = entry.endForStatus * 60 - nowSec
-            val countdown = if (entry.endMinute == null) {
-                "进行中"
-            } else {
-                "剩 ${fmtCountdown(remainingSec)}"
-            }
-            return Texts(
-                stateLabel = "进行中 · ${entry.activity}",
-                detail = "${entry.section} ${entry.timeText}",
-                countdown = countdown,
-            )
+        // 进行中：标题 = 多节点名称拼接；详情 = 时间段；倒计时 = 距最近结束的秒级剩余
+        if (status.currentEntries.isNotEmpty()) {
+            val current = status.currentEntries
+            val state = current.joinToString(" · ") { it.label }
+            val times = current.joinToString(" · ") { it.timeText }
+            val latestEnd = current.maxOf { it.endForStatus }
+            val remainSec = latestEnd * 60 - nowSec
+            val countdown =
+                if (current.any { it.endMinute != null } && remainSec > 0) {
+                    "距下课 ${fmtCountdown(remainSec)}"
+                } else {
+                    status.nextEntry?.let {
+                        "距${it.activity} ${fmtCountdown(it.startMinute * 60 - nowSec)}"
+                    } ?: ""
+                }
+            return Texts(stateLabel = state, detail = times, countdown = countdown)
         }
 
         // 休息中
-        status.currentBreaks.firstOrNull()?.let { breakPeriod ->
-            val next = status.nextEntry
-            val countdown = next?.let { "距${it.activity} ${fmtCountdown(it.startMinute * 60 - nowSec)}" } ?: ""
+        status.currentBreaks.firstOrNull()?.let { br ->
+            val countdown = fmtCountdown(br.endMinute * 60 - nowSec)
+            val detail = status.nextEntry?.let {
+                "距离 ${it.label} 还有 ${formatDuration(it.startMinute - nowMinute)}"
+            } ?: br.timeText
             return Texts(
-                stateLabel = "休息中 · ${breakPeriod.kind.label}",
-                detail = "${breakPeriod.section} ${breakPeriod.timeText}",
+                stateLabel = "${br.kind.label}中",
+                detail = detail,
                 countdown = countdown,
             )
         }
 
-        // 空档期：距离更近的下一个事件（节点或休息开始）
-        val nextEntry = status.nextEntry
-        val nextBreak = status.nextBreak
-        val entryStart = nextEntry?.startMinute ?: Int.MAX_VALUE
-        val breakStart = nextBreak?.startMinute ?: Int.MAX_VALUE
-        return when {
-            nextEntry == null && nextBreak == null -> Texts(
-                stateLabel = "已结束",
-                detail = "今日作息已全部结束",
-                countdown = "明日再会",
-            )
-            breakStart < entryStart -> Texts(
-                stateLabel = "空闲 · 休息将至",
-                detail = "休息 ${fmtTime(breakStart)}（${nextBreak!!.kind.label}）",
-                countdown = "距休息 ${fmtCountdown(breakStart * 60 - nowSec)}",
-            )
-            else -> Texts(
-                stateLabel = "空闲 · 待上课",
-                detail = "下一节 ${nextEntry!!.activity} ${nextEntry.timeText}",
-                countdown = "距开始 ${fmtCountdown(entryStart * 60 - nowSec)}",
+        // 即将开始（与 APP 分支顺序一致：先节点后休息）
+        status.nextEntry?.let { next ->
+            return Texts(
+                stateLabel = "即将开始",
+                detail = "${next.label} ${next.timeText}",
+                countdown = fmtCountdown(next.startMinute * 60 - nowSec),
             )
         }
+
+        // 即将休息
+        status.nextBreak?.let { br ->
+            return Texts(
+                stateLabel = "即将休息",
+                detail = "${br.kind.label} ${br.timeText}",
+                countdown = fmtCountdown(br.startMinute * 60 - nowSec),
+            )
+        }
+
+        // 今日已结束
+        return Texts(
+            stateLabel = "今日作息已结束",
+            detail = entries.firstOrNull()?.let { "明早 ${fmtTime(it.startMinute)} ${it.activity}" } ?: "早点休息",
+            countdown = "明日再会",
+        )
     }
 }

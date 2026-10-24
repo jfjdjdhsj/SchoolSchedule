@@ -76,6 +76,7 @@ import com.caoxian.schoolschedule.util.formatDuration
 import com.caoxian.schoolschedule.util.visibleRounds
 import com.caoxian.schoolschedule.util.UpdateController
 import com.caoxian.schoolschedule.util.UpdateState
+import com.caoxian.schoolschedule.widget.BaseScheduleWidgetProvider
 import com.styropyr0.prismal.PrismalBackdrop
 import com.styropyr0.prismal.components.PrismalGlassBottomTab
 import com.styropyr0.prismal.components.PrismalGlassBottomTabs
@@ -191,6 +192,10 @@ fun ScheduleScreen(
                 else -> null
             },
         )
+    }
+    // 轮次 / 时间表 / 「全部」视图变化时，立即同步桌面小组件
+    LaunchedEffect(activeRound, timetableId, showAllRound) {
+        BaseScheduleWidgetProvider.requestRefresh(context)
     }
 
     // 每 30 秒刷新一次当前时刻，驱动「进行中」高亮与倒计时

@@ -23,3 +23,9 @@ keystore/*.jks
 
 # 统计后台真实配置（本地私有，只存在于本地目录；Git 版见 server/config.example.json）
 server/config.json
+
+# 本地敏感词清单（同步脚本脱敏检查用，本地私有）
+.secret-words
+
+# 同步脚本（仅本地使用，不上传 GitHub）
+sync-to-git.sh

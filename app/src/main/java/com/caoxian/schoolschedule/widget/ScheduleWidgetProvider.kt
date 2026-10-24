@@ -89,6 +89,13 @@ abstract class BaseScheduleWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_TICK = "com.caoxian.schoolschedule.WIDGET_TICK"
+
+        /** APP 内轮次 / 时间表 / 设置变化时，立即刷新全部小组件 */
+        fun requestRefresh(context: Context) {
+            for (cls in listOf(ScheduleWidget4x1::class.java, ScheduleWidget4x2::class.java)) {
+                context.sendBroadcast(Intent(context, cls).setAction(ACTION_TICK))
+            }
+        }
     }
 }
 
