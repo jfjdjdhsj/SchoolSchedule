@@ -49,7 +49,6 @@ import top.yukonga.miuix.kmp.icon.extended.Lock
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Show
 import top.yukonga.miuix.kmp.icon.extended.Theme
-import top.yukonga.miuix.kmp.icon.extended.Tune
 import top.yukonga.miuix.kmp.icon.extended.Update
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -69,8 +68,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun SettingsScreen(
     settings: SettingsStore,
-    glassEngine: String,
-    onGlassEngineChange: (String) -> Unit,
+    glassEnabled: Boolean,
+    onGlassToggle: (Boolean) -> Unit,
     showAllRound: Boolean,
     onShowAllRoundToggle: (Boolean) -> Unit,
     themeMode: String,
@@ -96,7 +95,6 @@ fun SettingsScreen(
     // 弹窗
     var showModeDialog by remember { mutableStateOf(false) }
     var showColorDialog by remember { mutableStateOf(false) }
-    var showEngineDialog by remember { mutableStateOf(false) }
     var showOssDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
@@ -111,8 +109,18 @@ fun SettingsScreen(
                 text = "外观",
                 insideMargin = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 8.dp),
             )
-            // 主题模式
+            // 底栏液态玻璃开关
             Card(modifier = Modifier.fillMaxWidth()) {
+                SettingRow(
+                    icon = MiuixIcons.Theme,
+                    title = "底栏液态玻璃",
+                    summary = "iOS 风格折射玻璃底栏（Android 13+ 效果最佳，低版本自动降级为磨砂）",
+                    checked = glassEnabled,
+                    onToggle = onGlassToggle,
+                )
+            }
+            // 主题模式
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 SelectRow(
                     icon = MiuixIcons.Theme,
                     title = "主题模式",
@@ -135,20 +143,6 @@ fun SettingsScreen(
                         (hex ?: "default") == themeColor || (hex != null && name == themeColor)
                     }?.first ?: if (themeColor == "default") "默认" else themeColor,
                     onClick = { showColorDialog = true },
-                )
-            }
-            // 底栏玻璃引擎
-            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                SelectRow(
-                    icon = MiuixIcons.Tune,
-                    title = "底栏玻璃引擎",
-                    summary = "对比 MIUI 与 Prismal 液态玻璃效果",
-                    value = when (glassEngine) {
-                        SettingsStore.GLASS_ENGINE_MIUI -> "MIUI 玻璃"
-                        SettingsStore.GLASS_ENGINE_OFF -> "关闭"
-                        else -> "Prismal 液态玻璃"
-                    },
-                    onClick = { showEngineDialog = true },
                 )
             }
 
@@ -356,24 +350,6 @@ fun SettingsScreen(
                 showColorDialog = false
             },
             onDismiss = { showColorDialog = false },
-        )
-    }
-
-    // 底栏玻璃引擎弹窗
-    if (showEngineDialog) {
-        OptionDialog(
-            title = "底栏玻璃引擎",
-            selected = glassEngine,
-            options = listOf(
-                Option("prismal", "Prismal 液态玻璃", null, "AGSL 折射 + 色散，Android 13+ 最佳"),
-                Option("miui", "MIUI 玻璃", null, "miuix-blur 模糊 + 折射 + 边缘高光"),
-                Option("off", "关闭", null, "经典半透明纯色底栏"),
-            ),
-            onSelect = {
-                onGlassEngineChange(it)
-                showEngineDialog = false
-            },
-            onDismiss = { showEngineDialog = false },
         )
     }
 }

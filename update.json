@@ -1,5 +1,5 @@
 {
-  "versionCode": 26,
-  "versionName": "1.12.0",
-  "changelog": "1. 新增主题设置：深浅模式（跟随系统/浅色/深色）\n2. 新增主题色：Monet 动态取色，10 种预设色\n3. 底栏玻璃引擎可切换：Prismal 液态玻璃 / MIUI 玻璃 / 关闭\n4. 设置页去除大标题，布局更紧凑"
+  "versionCode": 27,
+  "versionName": "1.12.1",
+  "changelog": "1. 移除 MIUI 玻璃引擎（体验不佳），底栏回归 Prismal 液态玻璃开关\n2. 主题设置保留：深浅模式与 Monet 主题色"
 }

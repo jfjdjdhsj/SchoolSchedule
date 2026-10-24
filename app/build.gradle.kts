@@ -15,8 +15,8 @@ android {
         applicationId = "com.caoxian.schoolschedule"
         minSdk = 26
         targetSdk = 37
-        versionCode = 26
-        versionName = "1.12.0"
+        versionCode = 27
+        versionName = "1.12.1"
 
         // 匿名统计后端配置：地址与密钥放在本地 local.properties（不进仓库）
         val localProps = Properties().apply {
@@ -97,8 +97,6 @@ dependencies {
     implementation(libs.miuix.ui)
     // MIUIX 扩展图标库（设置页图标）
     implementation(libs.miuix.icons)
-    // MIUIX 玻璃效果库（底栏 MIUI 玻璃引擎：drawBackdrop / blur / lens / highlight）
-    implementation(libs.miuix.blur)
 
     // 液态玻璃底栏（AGSL 折射 / RenderEffect 模糊 / 低版本磨砂自动降级）
     implementation(libs.prismal)

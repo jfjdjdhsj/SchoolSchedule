@@ -97,9 +97,8 @@ class SettingsStore(context: Context) {
         }
 
     /**
-     * 底栏玻璃引擎："prismal"（PrismalAGSL 液态玻璃，默认）/
-     * "miui"（MIUI miuix-blur 玻璃）/"off"（经典纯色底栏）。
-     * 兼容旧设置：若从未设置过且旧「底栏液态玻璃」开关为 false，则视为关闭。
+     * 底栏液态玻璃（PrismalAGSL 引擎）："prismal"（开启，默认）/"off"（关闭）。
+     * 兼容旧设置：未设置过时读取旧「底栏液态玻璃」开关；历史 "miui" 值视为开启。
      */
     var glassEngine: String
         get() {
@@ -107,7 +106,8 @@ class SettingsStore(context: Context) {
             return if (prefs.getBoolean(KEY_BOTTOM_BAR_GLASS, true)) GLASS_ENGINE_PRISMAL else GLASS_ENGINE_OFF
         }
         set(value) {
-            prefs.edit().putString(KEY_GLASS_ENGINE, value).apply()
+            val v = if (value == GLASS_ENGINE_MIUI) GLASS_ENGINE_PRISMAL else value
+            prefs.edit().putString(KEY_GLASS_ENGINE, v).apply()
         }
 
     companion object {

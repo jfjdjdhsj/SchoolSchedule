@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- 设备使用信息上报（匿名统计，需用户同意后启用） -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- 应用内更新：下载新版本 APK 后拉起安装（Android 8.0+ 需用户授权「安装未知应用」） -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
-    <!-- miuix-blur 声明 minSdk 33，但库内效果按 API 分级：我们自行在 API 33+ 才启用 MIUI 引擎 -->
-    <uses-sdk tools:overrideLibrary="top.yukonga.miuix.kmp.blur" />
 
     <application
         android:allowBackup="true"

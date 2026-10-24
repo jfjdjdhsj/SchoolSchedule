@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.caoxian.schoolschedule.MainActivity
 import com.caoxian.schoolschedule.data.BreakPeriod
-import com.caoxian.schoolschedule.util.lens
 import com.caoxian.schoolschedule.data.Round
 import com.caoxian.schoolschedule.data.ScheduleEntry
 import com.caoxian.schoolschedule.data.SettingsStore
@@ -84,10 +83,6 @@ import com.styropyr0.prismal.drawPrismalGlass
 import com.styropyr0.prismal.effects.applyPrismalGlassEffects
 import com.styropyr0.prismal.effects.rememberPrismalAdaptiveLuminance
 import com.styropyr0.prismal.shapes.PrismalCapsule
-import top.yukonga.miuix.kmp.blur.drawBackdrop
-import top.yukonga.miuix.kmp.blur.blur
-import top.yukonga.miuix.kmp.blur.highlight.Highlight
-import top.yukonga.miuix.kmp.blur.layerBackdrop
 import com.styropyr0.prismal.specular.PrismalSpecular
 import com.styropyr0.prismal.sources.PrismalGlassLayer
 import com.styropyr0.prismal.sources.prismalGlassLayer
@@ -185,10 +180,8 @@ fun ScheduleScreen(
         updateController.check(silent = false)
     }
 
-    // 玻璃采样源：内容层（首页时间轴 / 设置页）绘制于此层，供底栏玻璃采样。
-    // Prismal 采样源始终保留（定位按钮玻璃依赖它）；MIUI 引擎额外挂 layerBackdrop。
+    // 玻璃采样源：内容层（首页时间轴 / 设置页）绘制于此层，供底栏玻璃与定位按钮采样
     val backdrop = rememberPrismalGlassLayer()
-    val miuiBackdrop = top.yukonga.miuix.kmp.blur.rememberLayerBackdrop()
     // 应用内主题强制深浅时，同步状态栏图标颜色（浅色 / 深色 / 跟随系统）
     LaunchedEffect(themeMode) {
         (context as? MainActivity)?.applySystemBarStyle(
@@ -297,15 +290,7 @@ fun ScheduleScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .prismalGlassLayer(backdrop)
-                    // MIUI 玻璃引擎的内容采样源
-                    .then(
-                        if (glassEngine == "miui") {
-                            Modifier.layerBackdrop(miuiBackdrop)
-                        } else {
-                            Modifier
-                        },
-                    ),
+                    .prismalGlassLayer(backdrop),
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -375,10 +360,10 @@ fun ScheduleScreen(
                     } else {
                         SettingsScreen(
                             settings = settings,
-                            glassEngine = glassEngine,
-                            onGlassEngineChange = {
-                                glassEngine = it
-                                settings.glassEngine = it
+                            glassEnabled = glassEngine != "off",
+                            onGlassToggle = {
+                                glassEngine = if (it) "prismal" else "off"
+                                settings.glassEngine = glassEngine
                             },
                             showAllRound = showAllRound,
                             onShowAllRoundToggle = {
@@ -456,13 +441,12 @@ fun ScheduleScreen(
                 }
             }
 
-            // 底部导航栏：按引擎分派（Prismal 液态玻璃 / MIUI 玻璃 / 经典纯色）
+            // 底部导航栏：Prismal 液态玻璃或经典纯色底栏
             BottomBar(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
-                engine = glassEngine,
+                glassEnabled = glassEngine != "off",
                 backdrop = backdrop,
-                miuiBackdrop = miuiBackdrop,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
 
@@ -504,30 +488,18 @@ fun ScheduleScreen(
 /**
  * 底部导航栏：首页 / 设置。按玻璃引擎分派：
  *  - prismal：PrismalAGSL 液态玻璃胶囊（AGSL 折射，31–32 模糊，25–30 磨砂）；
- *  - miui：MIUI miuix-blur 玻璃（drawBackdrop + blur + lens 折射 + Highlight 高光）；
  *  - off：经典半透明纯色底栏。
  */
 @Composable
 private fun BottomBar(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    engine: String,
+    glassEnabled: Boolean,
     backdrop: PrismalGlassLayer,
-    miuiBackdrop: top.yukonga.miuix.kmp.blur.LayerBackdrop,
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MiuixTheme.colorScheme
-    if (engine == "miui" && android.os.Build.VERSION.SDK_INT >= 33) {
-        MiuiGlassBottomBar(
-            selectedTab = selectedTab,
-            onTabSelected = onTabSelected,
-            backdrop = miuiBackdrop,
-            modifier = modifier,
-        )
-    } else if (engine == "miui") {
-        // Android 13 以下不支持 miuix-blur 的运行时着色器，回落经典底栏
-        ClassicBottomBarContent(selectedTab, onTabSelected, modifier)
-    } else if (engine == "prismal") {
+    if (glassEnabled) {
         GlassBottomBar(
             selectedTab = selectedTab,
             onTabSelected = onTabSelected,
@@ -760,137 +732,6 @@ private fun GlassBottomBar(
                             // 拖动结束：确认触觉
                             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         }
-                        gestureScope.launch { glassBoost.animateTo(0f, boostSpring) }
-                    }
-                },
-        )
-    }
-}
-
-/**
- * MIUI 玻璃底栏：基于 miuix-blur（drawBackdrop + blur + lens 折射 + Highlight 高光）。
- * 交互与 Prismal 版一致：按下增压、水平拖动切页、触觉反馈。
- */
-@Composable
-private fun MiuiGlassBottomBar(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    backdrop: top.yukonga.miuix.kmp.blur.LayerBackdrop,
-    modifier: Modifier = Modifier,
-) {
-    val colorScheme = MiuixTheme.colorScheme
-    val view = LocalView.current
-    val tabsCount = 2
-    val dark = LocalAppDarkTheme.current
-
-    // 玻璃增压进度：按下 → 0.35；拖动 → 1；松手 → 0（驱动模糊/折射增强与缩放）
-    val glassBoost = remember { Animatable(0f) }
-    val boostSpring = spring<Float>(dampingRatio = 0.7f, stiffness = 600f)
-    val gestureScope = rememberCoroutineScope()
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 12.dp),
-    ) {
-        // 玻璃胶囊本体
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .graphicsLayer {
-                    val s = 1f + 0.03f * glassBoost.value
-                    scaleX = s
-                    scaleY = s
-                }
-                .drawBackdrop(
-                    backdrop = backdrop,
-                    shape = { RoundedCornerShape(50) },
-                    effects = {
-                        blur(18f + 10f * glassBoost.value)
-                        lens(
-                            refractionHeight = 24.dp.toPx(),
-                            refractionAmount = 20.dp.toPx(),
-                            chromaticAberration = 0.12f + 0.08f * glassBoost.value,
-                        )
-                    },
-                    highlight = {
-                        if (dark) {
-                            Highlight.GlassStrokeMiddleDark
-                        } else {
-                            Highlight.GlassStrokeMiddleLight
-                        }
-                    },
-                ),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    GlassTabContent(selected = selectedTab == 0, icon = HomeIcon, label = "首页")
-                }
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    GlassTabContent(selected = selectedTab == 1, icon = SettingsIcon, label = "设置")
-                }
-            }
-        }
-
-        // 手势层：与 Prismal 版交互一致（短按切换 / 水平拖动实时切换 / 触觉反馈）
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        val slop = viewConfiguration.touchSlop
-                        val tabWidth = size.width / tabsCount.toFloat()
-                        gestureScope.launch { glassBoost.animateTo(0.35f, boostSpring) }
-
-                        var dragging = false
-                        var totalDx = 0f
-                        var totalDy = 0f
-                        var lastIndex = -1
-                        var lastX = down.position.x
-
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            if (!change.pressed) break
-                            lastX = change.position.x
-                            val delta = change.position - change.previousPosition
-
-                            if (!dragging) {
-                                totalDx += delta.x
-                                totalDy += delta.y
-                                if (abs(totalDx) > slop && abs(totalDx) > abs(totalDy)) {
-                                    dragging = true
-                                    gestureScope.launch { glassBoost.animateTo(1f, boostSpring) }
-                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                                } else if (abs(totalDy) > slop) {
-                                    break
-                                }
-                            }
-
-                            if (dragging) {
-                                val index =
-                                    (change.position.x / tabWidth).toInt().coerceIn(0, tabsCount - 1)
-                                if (index != lastIndex) {
-                                    lastIndex = index
-                                    onTabSelected(index)
-                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                                }
-                                change.consume()
-                            }
-                        }
-
-                        val index = (lastX / tabWidth).toInt().coerceIn(0, tabsCount - 1)
-                        onTabSelected(index)
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         gestureScope.launch { glassBoost.animateTo(0f, boostSpring) }
                     }
                 },
