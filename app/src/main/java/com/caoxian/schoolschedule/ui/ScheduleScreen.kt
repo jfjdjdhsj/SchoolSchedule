@@ -193,10 +193,6 @@ fun ScheduleScreen(
             },
         )
     }
-    // 轮次 / 时间表 / 「全部」视图变化时，立即同步桌面小组件
-    LaunchedEffect(activeRound, timetableId, showAllRound) {
-        BaseScheduleWidgetProvider.requestRefresh(context)
-    }
 
     // 每 30 秒刷新一次当前时刻，驱动「进行中」高亮与倒计时
     val nowMinute by produceState(initialValue = currentMinutes()) {
@@ -219,6 +215,11 @@ fun ScheduleScreen(
     // 由时间表自动推导的休息段（课间休息 / 长间休）
     val breaks = remember(entries) { computeBreaks(entries) }
     val status = remember(entries, breaks, nowMinute) { computeStatus(entries, breaks, nowMinute) }
+
+    // 轮次 / 时间表 / 「全部」视图变化时，立即同步桌面小组件
+    LaunchedEffect(activeRound, timetableId, showAllRound) {
+        BaseScheduleWidgetProvider.requestRefresh(context)
+    }
 
     // 与时间轴 LazyColumn item 顺序一致的 key 列表，供「定位」滚动使用
     val flatKeys = remember(entries, breaks) { timelineKeys(entries, breaks) }
