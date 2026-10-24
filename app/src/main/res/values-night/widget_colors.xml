@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 桌面小组件（深色模式） -->
+    <color name="widget_bg">#F21B1B1F</color>
+    <color name="widget_text">#FFFFFFFF</color>
+    <color name="widget_sub">#FF9CA3AF</color>
+    <color name="widget_accent">#FF6EA8FF</color>
+</resources>

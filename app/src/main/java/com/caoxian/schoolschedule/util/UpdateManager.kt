@@ -1,0 +1,309 @@
+package com.caoxian.schoolschedule.util
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.core.content.FileProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+
+/** 仓库中最新版本的信息（来自 GitHub Releases API 或 update.json 回退） */
+data class UpdateInfo(
+    val versionName: String,
+    val changelog: String,
+    /** update.json 回退源提供的 versionCode；Releases API 来源为 null（用版本号比较） */
+    val versionCode: Int? = null,
+    /** Release 资产下载地址；为 null 时按 tag 构造 */
+    val assetUrl: String? = null,
+) {
+    /** APK 下载直连地址（下载时再按加速源前缀套用） */
+    val apkUrl: String
+        get() = assetUrl ?: UpdateConfig.releaseDownloadUrl("v$versionName")
+}
+
+/** 更新流程状态机 */
+sealed interface UpdateState {
+    /** 空闲 */
+    data object Idle : UpdateState
+
+    /** 正在检查更新 */
+    data object Checking : UpdateState
+
+    /** 发现新版本 */
+    data class Available(val info: UpdateInfo) : UpdateState
+
+    /** 已是最新版本 */
+    data object Latest : UpdateState
+
+    /** 正在下载（progress：0—100） */
+    data class Downloading(val progress: Int) : UpdateState
+
+    /** 下载完成，等待安装 */
+    data class ReadyToInstall(val file: File) : UpdateState
+
+    /** 检查或下载失败 */
+    data class Failed(val message: String) : UpdateState
+}
+
+/**
+ * 应用内更新控制器：检查更新、下载 APK、拉起安装。
+ *
+ * - 检查更新优先走 jsDelivr CDN，再尝试 GitHub 直连（见 [UpdateConfig.updateJsonUrls]）；
+ * - 下载 APK 对直连地址依次套用加速源前缀（见 [UpdateConfig.MIRRORS]）；
+ * - 安装前检查「未知来源应用安装」权限，未授权时跳转系统设置页。
+ */
+class UpdateController(private val context: Context) {
+
+    var state by mutableStateOf<UpdateState>(UpdateState.Idle)
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    /** 当前应用是否已是最新（优先 versionCode 比较，否则按版本号三段式比较） */
+    suspend fun isNewest(info: UpdateInfo): Boolean = withContext(Dispatchers.IO) {
+        val pm = context.packageManager
+        val currentCode = runCatching {
+            pm.getPackageInfo(context.packageName, 0).longVersionCode.toInt()
+        }.getOrDefault(0)
+        val currentName = runCatching {
+            pm.getPackageInfo(context.packageName, 0).versionName ?: ""
+        }.getOrDefault("")
+        val remoteCode = info.versionCode
+        if (remoteCode != null) {
+            remoteCode <= currentCode
+        } else {
+            compareVersionName(info.versionName, currentName) <= 0
+        }
+    }
+
+    /** 三段式版本号比较（主.次.补丁），缺段按 0 处理；a > b 返回 1 */
+    private fun compareVersionName(a: String, b: String): Int {
+        fun parse(v: String) = v.removePrefix("v").split('.').map { it.trim().toIntOrNull() ?: 0 }
+        val pa = parse(a)
+        val pb = parse(b)
+        for (i in 0 until maxOf(pa.size, pb.size)) {
+            val x = pa.getOrElse(i) { 0 }
+            val y = pb.getOrElse(i) { 0 }
+            if (x != y) return if (x > y) 1 else -1
+        }
+        return 0
+    }
+
+    /**
+     * 检查更新。
+     * @param silent 静默模式（进入应用自动检测）：无新版本 / 失败时不改变状态、不提示
+     */
+    fun check(silent: Boolean) {
+        if (state is UpdateState.Checking || state is UpdateState.Downloading) return
+        state = UpdateState.Checking
+        scope.launch {
+            try {
+                val info = UpdateChecker.check()
+                if (isNewest(info)) {
+                    if (!silent) state = UpdateState.Latest
+                    else state = UpdateState.Idle
+                } else {
+                    state = UpdateState.Available(info)
+                }
+            } catch (e: Exception) {
+                if (!silent) state = UpdateState.Failed(e.message ?: "检查更新失败")
+                else state = UpdateState.Idle
+            }
+        }
+    }
+
+    /** 下载新版本 APK（带进度回调） */
+    fun download(info: UpdateInfo) {
+        if (state is UpdateState.Downloading) return
+        state = UpdateState.Downloading(0)
+        scope.launch {
+            try {
+                val dir = File(context.getExternalFilesDir("update") ?: File(context.filesDir, "update"), "")
+                dir.mkdirs()
+                val target = File(dir, "SchoolSchedule-${info.versionName}.apk")
+                UpdateChecker.downloadApk(info, target) { progress ->
+                    state = UpdateState.Downloading(progress)
+                }
+                state = UpdateState.ReadyToInstall(target)
+            } catch (e: Exception) {
+                state = UpdateState.Failed(e.message ?: "下载失败")
+            }
+        }
+    }
+
+    /**
+     * 拉起安装。未授予「安装未知应用」权限时先跳转系统设置，
+     * 用户授权后再次点击「立即安装」即可。
+     */
+    fun startInstall(file: File) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !context.packageManager.canRequestPackageInstalls()
+        ) {
+            // 跳转到本应用的「允许安装未知应用」系统设置页
+            val intent = Intent(
+                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.parse("package:${context.packageName}"),
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            runCatching { context.startActivity(intent) }
+            return
+        }
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file,
+        )
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+            )
+        }
+        runCatching { context.startActivity(intent) }
+    }
+}
+
+/** 更新检查与下载实现（纯网络逻辑，无状态） */
+object UpdateChecker {
+
+    /**
+     * 检查更新：优先 GitHub Releases API（含更新日志与 APK 资产地址）；
+     * API 不可达时回退 update.json（jsDelivr → GitHub 直连）。全部失败抛异常。
+     */
+    suspend fun check(): UpdateInfo = withContext(Dispatchers.IO) {
+        try {
+            return@withContext checkViaReleasesApi()
+        } catch (_: Exception) {
+            // 回退到 update.json
+        }
+        var lastError: Exception? = null
+        for (url in UpdateConfig.updateJsonUrls()) {
+            try {
+                val body = httpGet(url) ?: continue
+                val json = JSONObject(body)
+                return@withContext UpdateInfo(
+                    versionName = json.optString("versionName"),
+                    changelog = json.optString("changelog"),
+                    versionCode = json.optInt("versionCode", 0),
+                )
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        throw (lastError ?: IllegalStateException("检查更新失败"))
+    }
+
+    /** GitHub Releases API：releases/latest → tag_name / body / APK 资产地址 */
+    private fun checkViaReleasesApi(): UpdateInfo {
+        val conn = URL(UpdateConfig.RELEASES_API).openConnection() as HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 8000
+        conn.setRequestProperty("User-Agent", "SchoolSchedule-App")
+        conn.setRequestProperty("Accept", "application/vnd.github+json")
+        try {
+            if (conn.responseCode !in 200..299) {
+                error("GitHub API HTTP ${conn.responseCode}")
+            }
+            val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val tag = json.optString("tag_name", "").removePrefix("v")
+            if (tag.isBlank()) error("仓库还没有发布任何版本")
+            val changelog = json.optString("body", "")
+            var assetUrl: String? = null
+            json.optJSONArray("assets")?.let { assets ->
+                for (i in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(i)
+                    if (asset.optString("name", "").endsWith(".apk")) {
+                        assetUrl = asset.optString("browser_download_url", "")
+                        break
+                    }
+                }
+            }
+            return UpdateInfo(
+                versionName = tag,
+                changelog = changelog,
+                versionCode = null,
+                assetUrl = assetUrl?.takeIf { it.isNotBlank() },
+            )
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    /** 下载 APK：对直连地址依次套用加速源前缀，首个成功者生效 */
+    suspend fun downloadApk(
+        info: UpdateInfo,
+        target: File,
+        onProgress: (Int) -> Unit,
+    ): Unit = withContext(Dispatchers.IO) {
+        var lastError: Exception? = null
+        for (prefix in UpdateConfig.MIRRORS) {
+            try {
+                httpDownload(prefix + info.apkUrl, target, onProgress)
+                return@withContext
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        throw (lastError ?: IllegalStateException("下载失败"))
+    }
+
+    private fun httpGet(url: String): String? {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 8000
+        conn.setRequestProperty("User-Agent", "SchoolSchedule-App")
+        try {
+            if (conn.responseCode !in 200..299) return null
+            return conn.inputStream.bufferedReader().use { it.readText() }
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    private fun httpDownload(url: String, target: File, onProgress: (Int) -> Unit) {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 15000
+        conn.setRequestProperty("User-Agent", "SchoolSchedule-App")
+        conn.instanceFollowRedirects = true
+        try {
+            if (conn.responseCode !in 200..299) error("HTTP ${conn.responseCode}")
+            val total = conn.contentLengthLong
+            conn.inputStream.use { input ->
+                target.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    var done = 0L
+                    var lastNotified = -1
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read == -1) break
+                        output.write(buffer, 0, read)
+                        done += read
+                        if (total > 0) {
+                            val percent = (done * 100 / total).toInt().coerceIn(0, 100)
+                            if (percent != lastNotified) {
+                                lastNotified = percent
+                                onProgress(percent)
+                            }
+                        }
+                    }
+                    if (total <= 0) onProgress(100)
+                }
+            }
+        } finally {
+            conn.disconnect()
+        }
+    }
+}

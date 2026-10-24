@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+
+# 系统
+.DS_Store
+
+# 签名密钥（本地私有，勿提交到公开仓库）
+keystore/*.p12
+keystore/*.jks
+
+# 构建产物
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# 统计后台真实配置（本地私有，只存在于本地目录；Git 版见 server/config.example.json）
+server/config.json

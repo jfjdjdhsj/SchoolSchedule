@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 应用内更新下载的 APK（外部私有目录 files/update/） -->
+    <external-files-path name="update_apk" path="update/" />
+    <files-path name="update_apk_internal" path="update/" />
+</paths>

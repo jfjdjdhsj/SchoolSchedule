@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">校园作息表</string>
+    <string name="widget_4x1_label">作息 · 单行</string>
+    <string name="widget_4x1_desc">当前状态与倒计时</string>
+    <string name="widget_4x2_label">作息 · 详细</string>
+    <string name="widget_4x2_desc">状态、下一节与秒级倒计时</string>
+</resources>
