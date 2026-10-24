@@ -20,3 +20,6 @@ keystore/*.jks
 *.aab
 *.ap_
 *.dex
+
+# 统计后台真实配置（本地私有，只存在于本地目录；Git 版见 server/config.example.json）
+server/config.json
