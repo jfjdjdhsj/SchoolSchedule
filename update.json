@@ -1,5 +1,5 @@
 {
-  "versionCode": 22,
-  "versionName": "1.11.1",
-  "changelog": "1. 测试应用内更新功能\n2. 敏感信息移除：服务器地址与密钥改存本地配置"
+  "versionCode": 23,
+  "versionName": "1.11.2",
+  "changelog": "1. 全新应用图标\n2. 其他细节优化"
 }

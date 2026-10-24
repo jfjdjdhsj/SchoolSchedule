@@ -1,6 +1,6 @@
 # 校园作息表（SchoolSchedule）
 
-基于 [MIUIX](https://compose-miuix-ui.github.io/miuix/zh_CN/)（Compose Multiplatform 界面组件库）开发的安卓作息时间表应用，内置**冬季 / 夏季两套作息时间表，支持一键切换**。当前版本 **v1.11.1**（versionCode 22）。
+基于 [MIUIX](https://compose-miuix-ui.github.io/miuix/zh_CN/)（Compose Multiplatform 界面组件库）开发的安卓作息时间表应用，内置**冬季 / 夏季两套作息时间表，支持一键切换**。当前版本 **v1.11.2**（versionCode 23）。
 
 ## 版本发布流程（本地构建 + gh 发布）
 
