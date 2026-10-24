@@ -1,5 +1,5 @@
 {
-  "versionCode": 21,
-  "versionName": "1.11.0",
-  "changelog": "1. 新增应用内更新：进入时自动检测 + 设置页手动检测\n2. 更新下载走 GitHub 加速源，国内可达\n3. 设置页新增「更新」分组与图标"
+  "versionCode": 22,
+  "versionName": "1.11.1",
+  "changelog": "1. 测试应用内更新功能\n2. 敏感信息移除：服务器地址与密钥改存本地配置"
 }
