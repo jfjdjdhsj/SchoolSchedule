@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">校園作息表</string>
+    <string name="nav_home">首頁</string>
+    <string name="nav_settings">設定</string>
+
+    <!-- Status card -->
+    <string name="status_now">現在 %1$s</string>
+    <string name="status_remaining_class">還剩 %1$s下課</string>
+    <string name="status_next_item">下一項：%1$s %2$s</string>
+    <string name="status_in_break">%1$s中</string>
+    <string name="status_break_left">%1$s · 還剩 %2$s</string>
+    <string name="status_next_distance">距離 %1$s 還有 %2$s</string>
+    <string name="status_upcoming_class">即將開始</string>
+    <string name="status_until_start">距離開始 %1$s</string>
+    <string name="status_upcoming_break">即將休息</string>
+    <string name="status_until_break">距離休息 %1$s</string>
+    <string name="status_day_over">今日作息已結束</string>
+    <string name="status_tomorrow_early">明早 %1$s %2$s，早點休息</string>
+    <string name="status_rest_early">早點休息</string>
+    <string name="timeline_class_over">%1$s 下課</string>
+    <string name="schedule_footer_note">以上時間整理自學校官方作息時間表，如有調整以學校最新通知為準。</string>
+    <string name="locate_button_desc">定位到目前時間段</string>
+
+    <!-- Locate toasts -->
+    <string name="locate_current">已定位到目前項目：%1$s</string>
+    <string name="locate_current_break">已定位到目前休息：%1$s</string>
+    <string name="locate_next_entry">目前無進行中項目，已定位到下一項：%1$s</string>
+    <string name="locate_next_break">目前無進行中項目，已定位到下一段休息：%1$s</string>
+    <string name="locate_day_over">今日作息已結束</string>
+
+    <!-- Break kinds -->
+    <string name="break_kind_class">課間休息</string>
+    <string name="break_kind_long">長間休</string>
+
+    <!-- Updates -->
+    <string name="update_already_latest">已是最新版本</string>
+    <string name="update_check_failed">檢查更新失敗：%1$s</string>
+    <string name="update_found">發現新版本</string>
+    <string name="update_found_msg">發現新版本 v%1$s，是否立即下載更新？</string>
+    <string name="update_log_label">更新日誌：</string>
+    <string name="update_later">暫不更新</string>
+    <string name="update_download_now">立即下載</string>
+    <string name="update_downloading">正在下載 %1$s%%</string>
+    <string name="update_downloading_title">正在下載更新</string>
+    <string name="update_done_msg">更新套件已下載完成。點擊「立即安裝」升級到新版本；\n如系統彈出「允許安裝未知應用」提示，請允許後重試。</string>
+    <string name="update_later_install">稍後</string>
+    <string name="update_install_now">立即安裝</string>
+    <string name="update_download_complete">更新下載完成</string>
+
+    <!-- Privacy & stats -->
+    <string name="privacy_title">隱私政策與匿名統計</string>
+    <string name="privacy_intro">為了解校園作息表的實際使用情況，我們希望在應用使用過程中匿名上報以下資訊：</string>
+    <string name="privacy_item_device">· 設備資訊：機型、品牌、系統版本、螢幕解析度</string>
+    <string name="privacy_item_usage">· 使用情況：啟動與前後台切換時刻、目前查看的時間表與輪次</string>
+    <string name="privacy_item_env">· 環境資訊：網路類型、電量、應用版本</string>
+    <string name="privacy_note">以上資訊僅用於統計本軟體的使用情況，不包含姓名、手機號、帳號等\n任何個人身份內容，不會向任何第三方提供。</string>
+    <string name="privacy_decline">不同意</string>
+    <string name="privacy_agree">同意並繼續</string>
+
+    <!-- Settings -->
+    <string name="settings_group_appearance">外觀</string>
+    <string name="settings_glass_title">底欄液態玻璃</string>
+    <string name="settings_glass_summary">iOS 風格折射玻璃底欄（Android 13+ 效果最佳，低版本自動降級為磨砂）</string>
+    <string name="settings_theme_mode_title">主題模式</string>
+    <string name="settings_theme_mode_summary">跟隨系統 / 淺色 / 深色</string>
+    <string name="theme_system">跟隨系統</string>
+    <string name="theme_light">淺色</string>
+    <string name="theme_dark">深色</string>
+    <string name="settings_theme_color_title">主題色</string>
+    <string name="settings_theme_color_summary">以此為種子產生全套應用配色</string>
+    <string name="theme_color_default">預設</string>
+    <string name="settings_group_display">顯示</string>
+    <string name="settings_show_all_round">顯示「全部」輪次</string>
+    <string name="settings_show_all_round_summary">在首頁輪次標籤中顯示混合兩輪安排的「全部」檢視</string>
+    <string name="settings_group_privacy">資料與隱私</string>
+    <string name="settings_stats_title">匿名使用統計</string>
+    <string name="settings_stats_summary_on">已開啟：僅匿名上報機型與使用時刻，不含個人資訊</string>
+    <string name="settings_stats_summary_off">未開啟：開啟後匿名上報設備與使用資訊，可隨時關閉</string>
+    <string name="stats_state_on">已開啟</string>
+    <string name="stats_state_off">未開啟</string>
+    <string name="settings_group_update">更新</string>
+    <string name="settings_auto_update_title">進入時檢測更新</string>
+    <string name="settings_auto_update_summary">啟動應用時自動檢查 GitHub 上的新版本</string>
+    <string name="settings_check_update_title">檢測更新</string>
+    <string name="settings_check_update_summary">檢查 GitHub 儲存庫中的最新版本</string>
+    <string name="settings_checking">正在檢查…</string>
+    <string name="settings_update_log_title">更新日誌</string>
+    <string name="settings_update_log_summary">查看歷屆版本的更新內容</string>
+    <string name="settings_group_about">關於</string>
+    <string name="settings_feedback_title">問題回饋</string>
+    <string name="settings_feedback_summary">遇到問題或有建議？告訴我們，僅支援文字</string>
+    <string name="settings_oss_title">開源函式庫</string>
+    <string name="settings_oss_summary">查看本應用使用的開源元件與授權</string>
+    <string name="settings_about_desc">基於 MIUIX（Compose Multiplatform 介面元件庫）開發，\n內建冬季 / 夏季兩套作息時間表，自動高亮目前進行中的項目並推導課間休息時間。</string>
+    <string name="settings_about_source">資料來源：曹縣高級技工學校官方作息時間表\n冬季 2026年10月1日起執行 · 夏季 2026年5月1日起執行</string>
+
+    <!-- Common dialogs -->
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_close">關閉</string>
+
+    <!-- Changelog dialog -->
+    <string name="dialog_update_log">更新日誌</string>
+    <string name="log_loading">載入中…</string>
+    <string name="log_load_failed">載入失敗，請檢查網路後重試</string>
+    <string name="log_no_notes">（無說明）</string>
+    <string name="log_offline_cache">離線快取 · %1$s</string>
+
+    <!-- Feedback dialog -->
+    <string name="dialog_feedback">問題回饋</string>
+    <string name="feedback_type_bug">問題回饋</string>
+    <string name="feedback_type_suggestion">功能建議</string>
+    <string name="feedback_type_other">其他</string>
+    <string name="feedback_content_hint">請描述遇到的問題或建議（必填，至少 5 字）</string>
+    <string name="feedback_contact_hint">聯絡方式（選填，如信箱 / QQ）</string>
+    <string name="feedback_submitted">回饋已提交，感謝你的支持！</string>
+    <string name="feedback_submit_failed">提交失敗，請檢查網路後重試</string>
+    <string name="feedback_submitting">提交中…</string>
+    <string name="feedback_submit">提交回饋</string>
+
+    <!-- Widget -->
+    <string name="widget_4x1_label">作息 · 單行</string>
+    <string name="widget_4x1_desc">目前狀態與倒數計時</string>
+    <string name="widget_4x2_label">作息 · 詳細</string>
+    <string name="widget_4x2_desc">狀態、下一節與秒級倒數計時</string>
+    <string name="widget_countdown_class_over">距下課</string>
+    <string name="widget_countdown_class_start">距上課</string>
+    <string name="widget_countdown_start">距開始</string>
+    <string name="widget_countdown_break">距休息</string>
+    <string name="widget_break_soon_detail">休息 %1$s（%2$s）</string>
+    <string name="widget_next_detail">下一節 %1$s %2$s</string>
+    <string name="widget_tomorrow">明早 %1$s %2$s</string>
+</resources>

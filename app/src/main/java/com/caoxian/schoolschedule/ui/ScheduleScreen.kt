@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -62,7 +63,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.caoxian.schoolschedule.MainActivity
+import com.caoxian.schoolschedule.R
 import com.caoxian.schoolschedule.data.BreakPeriod
+import com.caoxian.schoolschedule.data.label
 import com.caoxian.schoolschedule.data.Round
 import com.caoxian.schoolschedule.data.ScheduleEntry
 import com.caoxian.schoolschedule.data.SettingsStore
@@ -160,12 +163,12 @@ fun ScheduleScreen(
     LaunchedEffect(updateController.state) {
         when (val s = updateController.state) {
             is UpdateState.Latest -> {
-                if (manualCheckRequested) Toast.makeText(context, "已是最新版本", Toast.LENGTH_SHORT).show()
+                if (manualCheckRequested) Toast.makeText(context, context.getString(R.string.update_already_latest), Toast.LENGTH_SHORT).show()
                 updateController.state = UpdateState.Idle
             }
             is UpdateState.Failed -> {
                 if (manualCheckRequested) {
-                    Toast.makeText(context, "检查更新失败：${s.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.update_check_failed, s.message), Toast.LENGTH_SHORT).show()
                 }
                 updateController.state = UpdateState.Idle
             }
@@ -235,23 +238,23 @@ fun ScheduleScreen(
         when {
             currentEntry != null -> {
                 key = entryKey(currentEntry)
-                message = "已定位到当前项目：${entryLabel(currentEntry)}"
+                message = context.getString(R.string.locate_current, entryLabel(currentEntry))
             }
             currentBreak != null -> {
                 key = breakKey(currentBreak)
-                message = "已定位到当前休息：${currentBreak.kind.label}"
+                message = context.getString(R.string.locate_current_break, currentBreak.kind.label(context))
             }
             fallbackEntry != null &&
                 (fallbackBreak == null || fallbackEntry.startMinute <= fallbackBreak.startMinute) -> {
                 key = entryKey(fallbackEntry)
-                message = "当前无进行中项目，已定位到下一项：${entryLabel(fallbackEntry)}"
+                message = context.getString(R.string.locate_next_entry, entryLabel(fallbackEntry))
             }
             fallbackBreak != null -> {
                 key = breakKey(fallbackBreak)
-                message = "当前无进行中项目，已定位到下一段休息：${fallbackBreak.kind.label}"
+                message = context.getString(R.string.locate_next_break, fallbackBreak.kind.label(context))
             }
             else -> {
-                Toast.makeText(context, "今日作息已结束", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.locate_day_over), Toast.LENGTH_SHORT).show()
                 return
             }
         }
@@ -326,7 +329,7 @@ fun ScheduleScreen(
                                     ) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
-                                                text = "校园作息表",
+                                                text = stringResource(R.string.app_name),
                                                 color = colorScheme.onSurface,
                                                 fontSize = 32.sp,
                                             )
@@ -439,7 +442,7 @@ fun ScheduleScreen(
                 ) {
                     Icon(
                         imageVector = LocateIcon,
-                        contentDescription = "定位到当前时间段",
+                        contentDescription = stringResource(R.string.locate_button_desc),
                         // 纯液态玻璃底、深色箭头（跟随主题前景色，按压玻璃增强）
                         tint = colorScheme.onSurface,
                         modifier = Modifier.size(26.dp),
@@ -550,13 +553,13 @@ private fun ClassicBottomBarContent(
                 ClassicBottomTab(
                     selected = selectedTab == 0,
                     icon = HomeIcon,
-                    label = "首页",
+                    label = stringResource(R.string.nav_home),
                     onClick = { onTabSelected(0) },
                 )
                 ClassicBottomTab(
                     selected = selectedTab == 1,
                     icon = SettingsIcon,
-                    label = "设置",
+                    label = stringResource(R.string.nav_settings),
                     onClick = { onTabSelected(1) },
                 )
             }
@@ -628,10 +631,10 @@ private fun GlassBottomBar(
             modifier = Modifier.fillMaxWidth(),
         ) {
             PrismalGlassBottomTab(onClick = { onTabSelected(0) }) {
-                GlassTabContent(selected = selectedTab == 0, icon = HomeIcon, label = "首页")
+                GlassTabContent(selected = selectedTab == 0, icon = HomeIcon, label = stringResource(R.string.nav_home))
             }
             PrismalGlassBottomTab(onClick = { onTabSelected(1) }) {
-                GlassTabContent(selected = selectedTab == 1, icon = SettingsIcon, label = "设置")
+                GlassTabContent(selected = selectedTab == 1, icon = SettingsIcon, label = stringResource(R.string.nav_settings))
             }
         }
 
@@ -991,7 +994,7 @@ fun ScheduleTimeline(
         }
         item(key = "footer") {
             Text(
-                text = "以上时间整理自学校官方作息时间表，如有调整以学校最新通知为准。",
+                text = stringResource(R.string.schedule_footer_note),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = ContentInset + 8.dp, vertical = 8.dp),
@@ -1052,6 +1055,7 @@ fun NowStatusCard(
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MiuixTheme.colorScheme
+    val context = LocalContext.current
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.defaultColors(
@@ -1061,7 +1065,7 @@ fun NowStatusCard(
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
-                text = "现在 ${fmtTime(status.nowMinute)}",
+                text = stringResource(R.string.status_now, fmtTime(status.nowMinute)),
                 color = colorScheme.onTertiaryContainer,
                 fontSize = 13.sp,
             )
@@ -1086,7 +1090,7 @@ fun NowStatusCard(
                     if (current.any { it.endMinute != null } && remain > 0) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "还剩 ${formatDuration(remain)}下课",
+                            text = stringResource(R.string.status_remaining_class, formatDuration(remain)),
                             color = colorScheme.primary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -1098,9 +1102,9 @@ fun NowStatusCard(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = if (nextEntry != null) {
-                                "下一项：${entryLabel(nextEntry)} ${nextEntry.timeText}"
+                                stringResource(R.string.status_next_item, entryLabel(nextEntry), nextEntry.timeText)
                             } else {
-                                "下一项：${nextBreak!!.kind.label} ${nextBreak.timeText}"
+                                stringResource(R.string.status_next_item, nextBreak!!.kind.label(context), nextBreak.timeText)
                             },
                             color = colorScheme.onTertiaryContainer,
                             fontSize = 13.sp,
@@ -1111,21 +1115,21 @@ fun NowStatusCard(
                 status.currentBreaks.isNotEmpty() -> {
                     val br = status.currentBreaks.first()
                     Text(
-                        text = "${br.kind.label}中",
+                        text = stringResource(R.string.status_in_break, br.kind.label(context)),
                         color = colorScheme.primary,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${br.timeText} · 还剩 ${formatDuration(br.endMinute - status.nowMinute)}",
+                        text = stringResource(R.string.status_break_left, br.timeText, formatDuration(br.endMinute - status.nowMinute)),
                         color = colorScheme.onTertiaryContainer,
                         fontSize = 15.sp,
                     )
                     status.nextEntry?.let { next ->
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "距离 ${entryLabel(next)} 还有 ${formatDuration(next.startMinute - status.nowMinute)}",
+                            text = stringResource(R.string.status_next_distance, entryLabel(next), formatDuration(next.startMinute - status.nowMinute)),
                             color = colorScheme.primary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -1136,7 +1140,7 @@ fun NowStatusCard(
                 status.nextEntry != null -> {
                     val next = status.nextEntry
                     Text(
-                        text = "即将开始",
+                        text = stringResource(R.string.status_upcoming_class),
                         color = colorScheme.primary,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
@@ -1149,7 +1153,7 @@ fun NowStatusCard(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "距离开始 ${formatDuration(next.startMinute - status.nowMinute)}",
+                        text = stringResource(R.string.status_until_start, formatDuration(next.startMinute - status.nowMinute)),
                         color = colorScheme.primary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
@@ -1159,7 +1163,7 @@ fun NowStatusCard(
                 status.nextBreak != null -> {
                     val br = status.nextBreak
                     Text(
-                        text = "即将休息",
+                        text = stringResource(R.string.status_upcoming_break),
                         color = colorScheme.primary,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
@@ -1172,7 +1176,7 @@ fun NowStatusCard(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "距离休息 ${formatDuration(br.startMinute - status.nowMinute)}",
+                        text = stringResource(R.string.status_until_break, formatDuration(br.startMinute - status.nowMinute)),
                         color = colorScheme.primary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
@@ -1181,15 +1185,15 @@ fun NowStatusCard(
 
                 else -> {
                     Text(
-                        text = "今日作息已结束",
+                        text = stringResource(R.string.status_day_over),
                         color = colorScheme.primary,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = firstEntry?.let { "明早 ${fmtTime(it.startMinute)} ${it.activity}，早点休息" }
-                            ?: "早点休息",
+                        text = firstEntry?.let { stringResource(R.string.status_tomorrow_early, fmtTime(it.startMinute), it.activity) }
+                            ?: stringResource(R.string.status_rest_early),
                         color = colorScheme.onTertiaryContainer,
                         fontSize = 14.sp,
                     )
@@ -1248,7 +1252,7 @@ fun EntryRow(
             }
             // 下课时间 + 备注，如「9:05 下课 · 不能提前下课」
             val subText = buildList {
-                if (entry.endMinute != null) add("${fmtTime(entry.endMinute)} 下课")
+                if (entry.endMinute != null) add(stringResource(R.string.timeline_class_over, fmtTime(entry.endMinute)))
                 if (entry.note != null) add(entry.note)
             }.joinToString(" · ")
             if (subText.isNotEmpty()) {
@@ -1290,37 +1294,36 @@ fun PrivacyConsentDialog(
     val body: @Composable () -> Unit = {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)) {
             Text(
-                text = "为了解校园作息表的实际使用情况，我们希望在应用使用过程中匿名上报以下信息：",
+                text = stringResource(R.string.privacy_intro),
                 color = colorScheme.onSurface,
                 fontSize = 14.sp,
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "· 设备信息：机型、品牌、系统版本、屏幕分辨率",
+                text = stringResource(R.string.privacy_item_device),
                 color = colorScheme.onSurfaceVariantSummary,
                 fontSize = 13.sp,
             )
             Text(
-                text = "· 使用情况：启动与前后台切换时刻、当前查看的时间表与轮次",
+                text = stringResource(R.string.privacy_item_usage),
                 color = colorScheme.onSurfaceVariantSummary,
                 fontSize = 13.sp,
             )
             Text(
-                text = "· 环境信息：网络类型、电量、应用版本",
+                text = stringResource(R.string.privacy_item_env),
                 color = colorScheme.onSurfaceVariantSummary,
                 fontSize = 13.sp,
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "以上信息仅用于统计本软件的使用情况，不包含姓名、手机号、账号等" +
-                    "任何个人身份内容，不会向任何第三方提供。",
+                text = stringResource(R.string.privacy_note),
                 color = colorScheme.onSurfaceVariantSummary,
                 fontSize = 12.sp,
             )
             Spacer(modifier = Modifier.height(18.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextButton(
-                    text = "不同意",
+                    text = stringResource(R.string.privacy_decline),
                     onClick = onDisagree,
                     modifier = Modifier.weight(1f),
                 )
@@ -1329,7 +1332,7 @@ fun PrivacyConsentDialog(
                     onClick = onAgree,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(text = "同意并继续", fontSize = 15.sp)
+                    Text(text = stringResource(R.string.privacy_agree), fontSize = 15.sp)
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -1337,7 +1340,7 @@ fun PrivacyConsentDialog(
     }
     OverlayDialog(
         show = true,
-        title = "隐私政策与匿名统计",
+        title = stringResource(R.string.privacy_title),
         onDismissRequest = { }, // 必须做出选择，禁止返回键 / 点击外部关闭
         content = body,
     )
@@ -1356,14 +1359,14 @@ fun UpdateAvailableDialog(
     val body: @Composable () -> Unit = {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)) {
             Text(
-                text = "发现新版本 v${info.versionName}，是否立即下载更新？",
+                text = stringResource(R.string.update_found_msg, info.versionName),
                 color = colorScheme.onSurface,
                 fontSize = 14.sp,
             )
             if (info.changelog.isNotBlank()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "更新日志：",
+                    text = stringResource(R.string.update_log_label),
                     color = colorScheme.onSurfaceVariantSummary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
@@ -1377,7 +1380,7 @@ fun UpdateAvailableDialog(
             Spacer(modifier = Modifier.height(18.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextButton(
-                    text = "暂不更新",
+                    text = stringResource(R.string.update_later),
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
                 )
@@ -1386,7 +1389,7 @@ fun UpdateAvailableDialog(
                     onClick = onUpdate,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(text = "立即下载", fontSize = 15.sp)
+                    Text(text = stringResource(R.string.update_download_now), fontSize = 15.sp)
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -1394,7 +1397,7 @@ fun UpdateAvailableDialog(
     }
     OverlayDialog(
         show = true,
-        title = "发现新版本",
+        title = stringResource(R.string.update_found),
         onDismissRequest = onDismiss,
         content = body,
     )
@@ -1423,7 +1426,7 @@ fun UpdateDownloadDialog(progress: Int) {
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "正在下载 $progress%",
+                text = stringResource(R.string.update_downloading, progress),
                 color = colorScheme.onSurfaceVariantSummary,
                 fontSize = 13.sp,
                 modifier = Modifier.fillMaxWidth(),
@@ -1433,7 +1436,7 @@ fun UpdateDownloadDialog(progress: Int) {
     }
     OverlayDialog(
         show = true,
-        title = "正在下载更新",
+        title = stringResource(R.string.update_downloading_title),
         onDismissRequest = { }, // 下载中不可关闭
         content = body,
     )
@@ -1449,15 +1452,14 @@ fun UpdateInstallDialog(
     val body: @Composable () -> Unit = {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)) {
             Text(
-                text = "更新包已下载完成。点击「立即安装」升级到新版本；" +
-                    "如系统弹出「允许安装未知应用」提示，请允许后重试。",
+                text = stringResource(R.string.update_done_msg),
                 color = colorScheme.onSurfaceVariantSummary,
                 fontSize = 13.sp,
             )
             Spacer(modifier = Modifier.height(18.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextButton(
-                    text = "稍后",
+                    text = stringResource(R.string.update_later_install),
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
                 )
@@ -1466,7 +1468,7 @@ fun UpdateInstallDialog(
                     onClick = onInstall,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(text = "立即安装", fontSize = 15.sp)
+                    Text(text = stringResource(R.string.update_install_now), fontSize = 15.sp)
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -1474,7 +1476,7 @@ fun UpdateInstallDialog(
     }
     OverlayDialog(
         show = true,
-        title = "更新下载完成",
+        title = stringResource(R.string.update_download_complete),
         onDismissRequest = onDismiss,
         content = body,
     )

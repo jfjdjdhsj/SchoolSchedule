@@ -1,5 +1,7 @@
 package com.caoxian.schoolschedule.data
 
+import android.content.Context
+import com.caoxian.schoolschedule.R
 import com.caoxian.schoolschedule.util.fmtTime
 
 /**
@@ -21,6 +23,15 @@ enum class BreakKind(val label: String) {
  * @param kind 休息类型
  * @param section 归属时段（取上一节点所在时段，如「上午」）
  */
+/** 休息类型的本地化名称（随系统语言） */
+fun BreakKind.label(context: Context): String =
+    context.getString(
+        when (this) {
+            BreakKind.CLASS_BREAK -> R.string.break_kind_class
+            BreakKind.LONG_BREAK -> R.string.break_kind_long
+        },
+    )
+
 data class BreakPeriod(
     val startMinute: Int,
     val endMinute: Int,

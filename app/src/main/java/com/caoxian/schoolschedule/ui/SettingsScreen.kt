@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
+import com.caoxian.schoolschedule.R
 import com.caoxian.schoolschedule.data.SettingsStore
 import com.caoxian.schoolschedule.util.FeedbackSender
 import com.caoxian.schoolschedule.util.ReleaseLogEntry
@@ -120,15 +122,15 @@ fun SettingsScreen(
     ) {
         Column(modifier = Modifier.padding(horizontal = 12.dp)) {
             SmallTitle(
-                text = "外观",
+                text = stringResource(R.string.settings_group_appearance),
                 insideMargin = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 8.dp),
             )
             // 底栏液态玻璃开关
             Card(modifier = Modifier.fillMaxWidth()) {
                 SettingRow(
                     icon = MiuixIcons.Theme,
-                    title = "底栏液态玻璃",
-                    summary = "iOS 风格折射玻璃底栏（Android 13+ 效果最佳，低版本自动降级为磨砂）",
+                    title = stringResource(R.string.settings_glass_title),
+                    summary = stringResource(R.string.settings_glass_summary),
                     checked = glassEnabled,
                     onToggle = onGlassToggle,
                 )
@@ -137,12 +139,12 @@ fun SettingsScreen(
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 SelectRow(
                     icon = MiuixIcons.Theme,
-                    title = "主题模式",
-                    summary = "跟随系统 / 浅色 / 深色",
+                    title = stringResource(R.string.settings_theme_mode_title),
+                    summary = stringResource(R.string.settings_theme_mode_summary),
                     value = when (themeMode) {
-                        SettingsStore.THEME_MODE_LIGHT -> "浅色"
-                        SettingsStore.THEME_MODE_DARK -> "深色"
-                        else -> "跟随系统"
+                        SettingsStore.THEME_MODE_LIGHT -> stringResource(R.string.theme_light)
+                        SettingsStore.THEME_MODE_DARK -> stringResource(R.string.theme_dark)
+                        else -> stringResource(R.string.theme_system)
                     },
                     onClick = { showModeDialog = true },
                 )
@@ -151,43 +153,43 @@ fun SettingsScreen(
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 SelectRow(
                     icon = MiuixIcons.Album,
-                    title = "主题色",
-                    summary = "以此为种子生成全套应用配色",
+                    title = stringResource(R.string.settings_theme_color_title),
+                    summary = stringResource(R.string.settings_theme_color_summary),
                     value = ThemeColorPresets.firstOrNull { (name, hex) ->
                         (hex ?: "default") == themeColor || (hex != null && name == themeColor)
-                    }?.first ?: if (themeColor == "default") "默认" else themeColor,
+                    }?.first ?: if (themeColor == "default") stringResource(R.string.theme_color_default) else themeColor,
                     onClick = { showColorDialog = true },
                 )
             }
 
             SmallTitle(
-                text = "显示",
+                text = stringResource(R.string.settings_group_display),
                 insideMargin = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 8.dp),
                 modifier = Modifier.padding(top = 8.dp),
             )
             Card(modifier = Modifier.fillMaxWidth()) {
                 SettingRow(
                     icon = MiuixIcons.Show,
-                    title = "显示「全部」轮次",
-                    summary = "在首页轮次标签中显示混合两轮安排的「全部」视图",
+                    title = stringResource(R.string.settings_show_all_round),
+                    summary = stringResource(R.string.settings_show_all_round_summary),
                     checked = showAllRound,
                     onToggle = onShowAllRoundToggle,
                 )
             }
 
             SmallTitle(
-                text = "数据与隐私",
+                text = stringResource(R.string.settings_group_privacy),
                 insideMargin = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 8.dp),
                 modifier = Modifier.padding(top = 8.dp),
             )
             Card(modifier = Modifier.fillMaxWidth()) {
                 SettingRow(
                     icon = MiuixIcons.Lock,
-                    title = "匿名使用统计",
+                    title = stringResource(R.string.settings_stats_title),
                     summary = if (statsEnabled) {
-                        "已开启：仅匿名上报机型与使用时刻，不含个人信息"
+                        stringResource(R.string.settings_stats_summary_on)
                     } else {
-                        "未开启：开启后匿名上报设备与使用信息，可随时关闭"
+                        stringResource(R.string.settings_stats_summary_off)
                     },
                     checked = statsEnabled,
                     onToggle = {
@@ -198,15 +200,15 @@ fun SettingsScreen(
             }
 
             SmallTitle(
-                text = "更新",
+                text = stringResource(R.string.settings_group_update),
                 insideMargin = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 8.dp),
                 modifier = Modifier.padding(top = 8.dp),
             )
             Card(modifier = Modifier.fillMaxWidth()) {
                 SettingRow(
                     icon = MiuixIcons.Update,
-                    title = "进入时检测更新",
-                    summary = "启动应用时自动检查 GitHub 上的新版本",
+                    title = stringResource(R.string.settings_auto_update_title),
+                    summary = stringResource(R.string.settings_auto_update_summary),
                     checked = autoCheckUpdate,
                     onToggle = {
                         autoCheckUpdate = it
@@ -225,7 +227,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = MiuixIcons.Refresh,
-                        contentDescription = "检测更新",
+                        contentDescription = stringResource(R.string.settings_check_update_title),
                         tint = colorScheme.primary,
                         modifier = Modifier
                             .size(24.dp)
@@ -234,12 +236,12 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "检测更新",
+                            text = stringResource(R.string.settings_check_update_title),
                             color = colorScheme.onSurface,
                             fontSize = 15.sp,
                         )
                         Text(
-                            text = "检查 GitHub 仓库中的最新版本",
+                            text = stringResource(R.string.settings_check_update_summary),
                             color = colorScheme.onSurfaceVariantSummary,
                             fontSize = 11.sp,
                         )
@@ -250,7 +252,7 @@ fun SettingsScreen(
                             .align(Alignment.CenterVertically),
                     )
                     Text(
-                        text = if (update.state is UpdateState.Checking) "正在检查…" else "›",
+                        text = if (update.state is UpdateState.Checking) stringResource(R.string.settings_checking) else "›",
                         color = colorScheme.onSurfaceVariantSummary,
                         fontSize = if (update.state is UpdateState.Checking) 13.sp else 18.sp,
                         modifier = Modifier.align(Alignment.CenterVertically),
@@ -268,7 +270,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = MiuixIcons.Notes,
-                        contentDescription = "更新日志",
+                        contentDescription = stringResource(R.string.settings_update_log_title),
                         tint = colorScheme.primary,
                         modifier = Modifier
                             .size(24.dp)
@@ -277,12 +279,12 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "更新日志",
+                            text = stringResource(R.string.dialog_update_log),
                             color = colorScheme.onSurface,
                             fontSize = 15.sp,
                         )
                         Text(
-                            text = "查看历届版本的更新内容",
+                            text = stringResource(R.string.settings_update_log_summary),
                             color = colorScheme.onSurfaceVariantSummary,
                             fontSize = 11.sp,
                         )
@@ -302,7 +304,7 @@ fun SettingsScreen(
             }
 
             SmallTitle(
-                text = "关于",
+                text = stringResource(R.string.settings_group_about),
                 insideMargin = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 8.dp),
                 modifier = Modifier.padding(top = 8.dp),
             )
@@ -317,7 +319,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = MiuixIcons.Edit,
-                        contentDescription = "问题反馈",
+                        contentDescription = stringResource(R.string.settings_feedback_title),
                         tint = colorScheme.primary,
                         modifier = Modifier
                             .size(24.dp)
@@ -326,12 +328,12 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "问题反馈",
+                            text = stringResource(R.string.settings_feedback_title),
                             color = colorScheme.onSurface,
                             fontSize = 15.sp,
                         )
                         Text(
-                            text = "遇到问题或有建议？告诉我们，仅支持文字",
+                            text = stringResource(R.string.settings_feedback_summary),
                             color = colorScheme.onSurfaceVariantSummary,
                             fontSize = 11.sp,
                         )
@@ -360,7 +362,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = MiuixIcons.Community,
-                        contentDescription = "开源库",
+                        contentDescription = stringResource(R.string.settings_oss_title),
                         tint = colorScheme.primary,
                         modifier = Modifier
                             .size(24.dp)
@@ -369,12 +371,12 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "开源库",
+                            text = stringResource(R.string.settings_oss_title),
                             color = colorScheme.onSurface,
                             fontSize = 15.sp,
                         )
                         Text(
-                            text = "查看本应用使用的开源组件与许可",
+                            text = stringResource(R.string.settings_oss_summary),
                             color = colorScheme.onSurfaceVariantSummary,
                             fontSize = 11.sp,
                         )
@@ -389,22 +391,20 @@ fun SettingsScreen(
                 }
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "校园作息表 ${versionName ?: ""}",
+                        text = stringResource(R.string.app_name) + " " + (versionName ?: ""),
                         color = colorScheme.onSurface,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Spacer(modifier = Modifier.padding(top = 6.dp))
                     Text(
-                        text = "基于 MIUIX（Compose Multiplatform 界面组件库）开发，" +
-                            "内置冬季 / 夏季两套作息时间表，自动高亮当前进行中的项目并推导课间休息时间。",
+                        text = stringResource(R.string.settings_about_desc),
                         color = colorScheme.onSurfaceVariantSummary,
                         fontSize = 12.sp,
                     )
                     Spacer(modifier = Modifier.padding(top = 6.dp))
                     Text(
-                        text = "数据来源：曹县高级技工学校官方作息时间表\n" +
-                            "冬季 2026年10月1日起执行 · 夏季 2026年5月1日起执行",
+                        text = stringResource(R.string.settings_about_source),
                         color = colorScheme.onSurfaceVariantSummary,
                         fontSize = 12.sp,
                     )
@@ -432,12 +432,12 @@ fun SettingsScreen(
     // 主题模式弹窗
     if (showModeDialog) {
         OptionDialog(
-            title = "主题模式",
+            title = stringResource(R.string.settings_theme_mode_title),
             selected = themeMode,
             options = listOf(
-                Option("System", "跟随系统", null),
-                Option("Light", "浅色", null),
-                Option("Dark", "深色", null),
+                Option("System", stringResource(R.string.theme_system), null),
+                Option("Light", stringResource(R.string.theme_light), null),
+                Option("Dark", stringResource(R.string.theme_dark), null),
             ),
             onSelect = {
                 onThemeModeChange(it)
@@ -450,7 +450,7 @@ fun SettingsScreen(
     // 主题色弹窗（Monet 动态取色预设）
     if (showColorDialog) {
         OptionDialog(
-            title = "主题色",
+            title = stringResource(R.string.settings_theme_color_title),
             selected = themeColor,
             options = ThemeColorPresets.map { (name, hex) ->
                 Option(hex ?: "default", name, hex?.let { parseThemeColor(it) })
@@ -535,7 +535,7 @@ private fun OssLibrariesDialog(onDismiss: () -> Unit) {
             }
             Spacer(modifier = Modifier.padding(top = 14.dp))
             TextButton(
-                text = "关闭",
+                text = stringResource(R.string.dialog_close),
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -544,7 +544,7 @@ private fun OssLibrariesDialog(onDismiss: () -> Unit) {
     }
     OverlayDialog(
         show = true,
-        title = "开源库",
+        title = stringResource(R.string.settings_oss_title),
         onDismissRequest = onDismiss,
         content = body,
     )
@@ -586,7 +586,7 @@ private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
             when {
                 loading -> {
                     Text(
-                        text = "加载中…",
+                        text = stringResource(R.string.log_loading),
                         color = colorScheme.onSurfaceVariantSummary,
                         fontSize = 13.sp,
                         modifier = Modifier
@@ -597,7 +597,7 @@ private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
                 }
                 entries == null -> {
                     Text(
-                        text = "加载失败，请检查网络后重试",
+                        text = stringResource(R.string.log_load_failed),
                         color = colorScheme.onSurfaceVariantSummary,
                         fontSize = 13.sp,
                         modifier = Modifier
@@ -631,7 +631,7 @@ private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
                             )
                         }
                         Text(
-                            text = e.changelog.ifBlank { "（无说明）" },
+                            text = e.changelog.ifBlank { stringResource(R.string.log_no_notes) },
                             color = colorScheme.onSurface,
                             fontSize = 13.sp,
                         )
@@ -639,7 +639,7 @@ private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
                     cacheAt?.let { at ->
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "离线缓存 · $at",
+                            text = stringResource(R.string.log_offline_cache, at),
                             color = colorScheme.onSurfaceVariantSummary,
                             fontSize = 11.sp,
                             textAlign = TextAlign.Center,
@@ -650,7 +650,7 @@ private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(12.dp))
             TextButton(
-                text = "关闭",
+                text = stringResource(R.string.dialog_close),
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -659,7 +659,7 @@ private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
     }
     OverlayDialog(
         show = true,
-        title = "更新日志",
+        title = stringResource(R.string.dialog_update_log),
         onDismissRequest = onDismiss,
         content = body,
     )
@@ -674,7 +674,11 @@ private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
 private fun FeedbackDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val colorScheme = MiuixTheme.colorScheme
-    val categories = listOf("bug" to "问题反馈", "suggestion" to "功能建议", "other" to "其他")
+    val categories = listOf(
+                "bug" to stringResource(R.string.feedback_type_bug),
+                "suggestion" to stringResource(R.string.feedback_type_suggestion),
+                "other" to stringResource(R.string.feedback_type_other),
+            )
     var category by remember { mutableStateOf("bug") }
     var content by remember { mutableStateOf("") }
     var contact by remember { mutableStateOf("") }
@@ -711,7 +715,7 @@ private fun FeedbackDialog(onDismiss: () -> Unit) {
                 onValueChange = {
                     if (it.length <= FeedbackSender.MAX_CONTENT) content = it
                 },
-                label = "请描述遇到的问题或建议（必填，至少 5 字）",
+                label = stringResource(R.string.feedback_content_hint),
                 maxLines = 5,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -729,7 +733,7 @@ private fun FeedbackDialog(onDismiss: () -> Unit) {
                 onValueChange = {
                     if (it.length <= FeedbackSender.MAX_CONTACT) contact = it
                 },
-                label = "联系方式（选填，如邮箱 / QQ）",
+                label = stringResource(R.string.feedback_contact_hint),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -744,7 +748,8 @@ private fun FeedbackDialog(onDismiss: () -> Unit) {
                             submitting = false
                             Toast.makeText(
                                 context,
-                                if (ok) "反馈已提交，感谢你的支持！" else "提交失败，请检查网络后重试",
+                                if (ok) context.getString(R.string.feedback_submitted)
+                                else context.getString(R.string.feedback_submit_failed),
                                 Toast.LENGTH_SHORT,
                             ).show()
                             if (ok) onDismiss()
@@ -754,14 +759,14 @@ private fun FeedbackDialog(onDismiss: () -> Unit) {
                 enabled = canSubmit,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = if (submitting) "提交中…" else "提交反馈", fontSize = 15.sp)
+                Text(text = if (submitting) stringResource(R.string.feedback_submitting) else stringResource(R.string.feedback_submit), fontSize = 15.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
         }
     }
     OverlayDialog(
         show = true,
-        title = "问题反馈",
+        title = stringResource(R.string.dialog_feedback),
         onDismissRequest = onDismiss,
         content = body,
     )
@@ -831,7 +836,7 @@ private fun OptionDialog(
             }
             Spacer(modifier = Modifier.padding(top = 10.dp))
             TextButton(
-                text = "取消",
+                text = stringResource(R.string.dialog_cancel),
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -963,7 +968,7 @@ private fun SettingRow(
             )
         } else {
             Text(
-                text = if (checked) "已开启" else "未开启",
+                text = if (checked) stringResource(R.string.stats_state_on) else stringResource(R.string.stats_state_off),
                 color = if (checked) colorScheme.primary else colorScheme.onSurfaceVariantSummary,
                 fontSize = 13.sp,
                 modifier = Modifier.align(Alignment.CenterVertically),
