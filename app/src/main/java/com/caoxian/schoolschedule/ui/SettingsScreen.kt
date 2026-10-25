@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import android.widget.Toast
 import com.caoxian.schoolschedule.data.SettingsStore
 import com.caoxian.schoolschedule.util.FeedbackSender
+import com.caoxian.schoolschedule.util.ReleaseLogEntry
 import com.caoxian.schoolschedule.util.UpdateController
 import com.caoxian.schoolschedule.util.UpdateState
 import top.yukonga.miuix.kmp.basic.Button
@@ -54,6 +57,7 @@ import top.yukonga.miuix.kmp.icon.extended.Album
 import top.yukonga.miuix.kmp.icon.extended.Community
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.Lock
+import top.yukonga.miuix.kmp.icon.extended.Notes
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Show
 import top.yukonga.miuix.kmp.icon.extended.Theme
@@ -104,6 +108,7 @@ fun SettingsScreen(
     var showModeDialog by remember { mutableStateOf(false) }
     var showColorDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    var showLogDialog by remember { mutableStateOf(false) }
     var showOssDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
@@ -252,6 +257,49 @@ fun SettingsScreen(
                     )
                 }
             }
+            // 更新日志：聚合 GitHub Releases 历史版本说明
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showLogDialog = true }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Icon(
+                        imageVector = MiuixIcons.Notes,
+                        contentDescription = "更新日志",
+                        tint = colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .offset(y = (-1).dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "更新日志",
+                            color = colorScheme.onSurface,
+                            fontSize = 15.sp,
+                        )
+                        Text(
+                            text = "查看历届版本的更新内容",
+                            color = colorScheme.onSurfaceVariantSummary,
+                            fontSize = 11.sp,
+                        )
+                    }
+                    Spacer(
+                        modifier = Modifier
+                            .width(12.dp)
+                            .align(Alignment.CenterVertically),
+                    )
+                    Text(
+                        text = "›",
+                        color = colorScheme.onSurfaceVariantSummary,
+                        fontSize = 18.sp,
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                    )
+                }
+            }
 
             SmallTitle(
                 text = "关于",
@@ -374,6 +422,11 @@ fun SettingsScreen(
     // 问题反馈弹窗（纯文字：类型 + 正文 + 可选联系方式）
     if (showFeedbackDialog) {
         FeedbackDialog(onDismiss = { showFeedbackDialog = false })
+    }
+
+    // 更新日志弹窗（聚合 GitHub Releases，离线时回退本地缓存）
+    if (showLogDialog) {
+        UpdateLogDialog(update = update, onDismiss = { showLogDialog = false })
     }
 
     // 主题模式弹窗
@@ -504,6 +557,113 @@ private data class Option(
     val dot: Color? = null,
     val sub: String? = null,
 )
+
+/**
+ * 更新日志弹窗：聚合 GitHub Releases 历史版本说明（最新在前，最多 30 条）。
+ * 网络不可达时展示本地缓存（标注缓存时间）。
+ */
+@Composable
+private fun UpdateLogDialog(update: UpdateController, onDismiss: () -> Unit) {
+    val colorScheme = MiuixTheme.colorScheme
+    var loading by remember { mutableStateOf(true) }
+    var entries by remember { mutableStateOf<List<ReleaseLogEntry>?>(null) }
+    var cacheAt by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        val (list, cache) = update.fetchReleaseLog()
+        entries = list
+        cacheAt = cache
+        loading = false
+    }
+
+    val body: @Composable () -> Unit = {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 4.dp)
+                .heightIn(max = 460.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            when {
+                loading -> {
+                    Text(
+                        text = "加载中…",
+                        color = colorScheme.onSurfaceVariantSummary,
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                entries == null -> {
+                    Text(
+                        text = "加载失败，请检查网络后重试",
+                        color = colorScheme.onSurfaceVariantSummary,
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                else -> {
+                    entries!!.forEachIndexed { index, e ->
+                        if (index > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp)
+                                    .height(0.5.dp)
+                                    .background(colorScheme.onSurface.copy(alpha = 0.08f)),
+                            )
+                        }
+                        Text(
+                            text = "v${e.version}",
+                            color = colorScheme.primary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        if (e.date.isNotBlank()) {
+                            Text(
+                                text = e.date,
+                                color = colorScheme.onSurfaceVariantSummary,
+                                fontSize = 11.sp,
+                            )
+                        }
+                        Text(
+                            text = e.changelog.ifBlank { "（无说明）" },
+                            color = colorScheme.onSurface,
+                            fontSize = 13.sp,
+                        )
+                    }
+                    cacheAt?.let { at ->
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "离线缓存 · $at",
+                            color = colorScheme.onSurfaceVariantSummary,
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            TextButton(
+                text = "关闭",
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+    OverlayDialog(
+        show = true,
+        title = "更新日志",
+        onDismissRequest = onDismiss,
+        content = body,
+    )
+}
 
 /**
  * 问题反馈弹窗（专业版，仅文字）：

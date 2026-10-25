@@ -18,6 +18,9 @@ import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /** 仓库中最新版本的信息（来自 GitHub Releases API 或 update.json 回退） */
 data class UpdateInfo(
@@ -32,6 +35,9 @@ data class UpdateInfo(
     val apkUrl: String
         get() = assetUrl ?: UpdateConfig.releaseDownloadUrl("v$versionName")
 }
+
+/** 更新日志条目（GitHub Release：版本 / 日期 / 说明） */
+data class ReleaseLogEntry(val version: String, val date: String, val changelog: String)
 
 /** 更新流程状态机 */
 sealed interface UpdateState {
@@ -173,10 +179,18 @@ class UpdateController(private val context: Context) {
         }
         runCatching { context.startActivity(intent) }
     }
+
+    /** 拉取更新日志（委托 [UpdateChecker.fetchReleaseLog]，实现与缓存说明见其文档） */
+    suspend fun fetchReleaseLog(): Pair<List<ReleaseLogEntry>?, String?> =
+        UpdateChecker.fetchReleaseLog(context)
 }
 
 /** 更新检查与下载实现（纯网络逻辑，无状态） */
 object UpdateChecker {
+
+    /** 更新日志本地缓存 prefs 键名 */
+    private const val KEY_LOG_CACHE = "log_cache"
+    private const val KEY_LOG_CACHE_AT = "log_cache_at"
 
     /**
      * 检查更新：优先 GitHub Releases API（含更新日志与 APK 资产地址）；
@@ -269,6 +283,78 @@ object UpdateChecker {
             return conn.inputStream.bufferedReader().use { it.readText() }
         } finally {
             conn.disconnect()
+        }
+    }
+
+    /**
+     * 拉取更新日志（GitHub Releases 列表，最新在前，最多 30 条）。
+     * API 直连不可达时按加速源前缀重试；全部失败时回退本地缓存。
+     *
+     * @return 第一项：日志列表（null = 拉取失败且无缓存）；第二项：缓存时间（离线数据时非 null）
+     */
+    suspend fun fetchReleaseLog(
+        context: Context,
+    ): Pair<List<ReleaseLogEntry>?, String?> = withContext(Dispatchers.IO) {
+        val logPrefs = context.getSharedPreferences("sjb_update_log", Context.MODE_PRIVATE)
+        val api = "https://api.github.com/repos/${UpdateConfig.REPO_OWNER}/${UpdateConfig.REPO_NAME}/releases?per_page=30"
+        val urls = listOf(api) + UpdateConfig.MIRRORS.filter { it.isNotEmpty() }.map { it + api }
+        var result: List<ReleaseLogEntry>? = null
+        for (url in urls) {
+            try {
+                val body = httpGet(url) ?: continue
+                val arr = org.json.JSONArray(body)
+                val out = ArrayList<ReleaseLogEntry>()
+                for (i in 0 until arr.length()) {
+                    val r = arr.getJSONObject(i)
+                    val version = r.optString("tag_name").removePrefix("v")
+                    if (version.isBlank()) continue
+                    out.add(
+                        ReleaseLogEntry(
+                            version = version,
+                            date = r.optString("published_at").take(10),
+                            changelog = r.optString("body"),
+                        ),
+                    )
+                }
+                if (out.isNotEmpty()) {
+                    result = out
+                    break
+                }
+            } catch (_: Exception) {
+                // 尝试下一个地址
+            }
+        }
+        if (result != null) {
+            // 成功：写本地缓存供离线查看
+            runCatching {
+                val arr = org.json.JSONArray()
+                result!!.forEach {
+                    arr.put(
+                        JSONObject().put("v", it.version).put("d", it.date).put("c", it.changelog),
+                    )
+                }
+                logPrefs.edit()
+                    .putString(KEY_LOG_CACHE, arr.toString())
+                    .putString(
+                        KEY_LOG_CACHE_AT,
+                        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
+                            .format(java.util.Date()),
+                    )
+                    .apply()
+            }
+            result to null
+        } else {
+            // 失败：回退本地缓存
+            val cached = logPrefs.getString(KEY_LOG_CACHE, null) ?: return@withContext null to null
+            runCatching {
+                val arr = org.json.JSONArray(cached)
+                val out = ArrayList<ReleaseLogEntry>()
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    out.add(ReleaseLogEntry(o.optString("v"), o.optString("d"), o.optString("c")))
+                }
+                out
+            }.getOrNull() to logPrefs.getString(KEY_LOG_CACHE_AT, null)
         }
     }
 
