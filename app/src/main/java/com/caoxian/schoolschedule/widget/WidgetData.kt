@@ -9,7 +9,6 @@ import com.caoxian.schoolschedule.ui.computeStatus
 import com.caoxian.schoolschedule.util.currentMinutes
 import com.caoxian.schoolschedule.util.currentSecondOfDay
 import com.caoxian.schoolschedule.util.effectiveRound
-import com.caoxian.schoolschedule.util.fmtCountdown
 import com.caoxian.schoolschedule.util.fmtTime
 import com.caoxian.schoolschedule.util.formatDuration
 
@@ -26,7 +25,10 @@ object WidgetData {
     data class Texts(
         val stateLabel: String,
         val detail: String,
-        val countdown: String,
+        /** 倒计时前缀（如「距下课」）；null 表示无倒计时 */
+        val countdownPrefix: String?,
+        /** 倒计时剩余秒数；由 Chronometer 在桌面端每秒自走，不依赖后台广播 */
+        val countdownSec: Int?,
     )
 
     fun build(context: Context): Texts {
@@ -43,34 +45,30 @@ object WidgetData {
         val status = computeStatus(entries, breaks, nowMinute)
         val nowSec = currentSecondOfDay()
 
-        // 进行中：标题 = 多节点名称拼接；详情 = 时间段；倒计时 = 距最近结束的秒级剩余
+        // 进行中：标题 = 多节点名称拼接；详情 = 时间段；倒计时 = 距最近结束
         if (status.currentEntries.isNotEmpty()) {
             val current = status.currentEntries
             val state = current.joinToString(" · ") { it.label }
             val times = current.joinToString(" · ") { it.timeText }
             val latestEnd = current.maxOf { it.endForStatus }
             val remainSec = latestEnd * 60 - nowSec
-            val countdown =
-                if (current.any { it.endMinute != null } && remainSec > 0) {
-                    "距下课 ${fmtCountdown(remainSec)}"
-                } else {
-                    status.nextEntry?.let {
-                        "距${it.activity} ${fmtCountdown(it.startMinute * 60 - nowSec)}"
-                    } ?: ""
-                }
-            return Texts(stateLabel = state, detail = times, countdown = countdown)
+            return if (current.any { it.endMinute != null } && remainSec > 0) {
+                Texts(state, times, "距下课", remainSec)
+            } else {
+                Texts(state, times, null, null)
+            }
         }
 
         // 休息中
         status.currentBreaks.firstOrNull()?.let { br ->
-            val countdown = fmtCountdown(br.endMinute * 60 - nowSec)
             val detail = status.nextEntry?.let {
                 "距离 ${it.label} 还有 ${formatDuration(it.startMinute - nowMinute)}"
             } ?: br.timeText
             return Texts(
                 stateLabel = "${br.kind.label}中",
                 detail = detail,
-                countdown = countdown,
+                countdownPrefix = "距上课",
+                countdownSec = br.endMinute * 60 - nowSec,
             )
         }
 
@@ -79,7 +77,8 @@ object WidgetData {
             return Texts(
                 stateLabel = "即将开始",
                 detail = "${next.label} ${next.timeText}",
-                countdown = fmtCountdown(next.startMinute * 60 - nowSec),
+                countdownPrefix = "距开始",
+                countdownSec = next.startMinute * 60 - nowSec,
             )
         }
 
@@ -88,7 +87,8 @@ object WidgetData {
             return Texts(
                 stateLabel = "即将休息",
                 detail = "${br.kind.label} ${br.timeText}",
-                countdown = fmtCountdown(br.startMinute * 60 - nowSec),
+                countdownPrefix = "距休息",
+                countdownSec = br.startMinute * 60 - nowSec,
             )
         }
 
@@ -96,7 +96,8 @@ object WidgetData {
         return Texts(
             stateLabel = "今日作息已结束",
             detail = entries.firstOrNull()?.let { "明早 ${fmtTime(it.startMinute)} ${it.activity}" } ?: "早点休息",
-            countdown = "明日再会",
+            countdownPrefix = null,
+            countdownSec = null,
         )
     }
 }

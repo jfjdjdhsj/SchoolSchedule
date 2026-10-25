@@ -61,7 +61,21 @@ abstract class BaseScheduleWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, layoutRes()).apply {
                 setTextViewText(R.id.widget_state, texts.stateLabel)
                 setTextViewText(R.id.widget_detail, texts.detail)
-                setTextViewText(R.id.widget_countdown, texts.countdown)
+                // 倒计时使用 Chronometer：桌面端每秒自走，不受后台广播限制影响
+                val sec = texts.countdownSec
+                if (sec != null && sec > 0) {
+                    setViewVisibility(R.id.widget_countdown, android.view.View.VISIBLE)
+                    setChronometer(
+                        R.id.widget_countdown,
+                        System.currentTimeMillis() + sec * 1000L,
+                        "${texts.countdownPrefix} %s",
+                        true,
+                    )
+                    // API 24+：切换为倒数模式（到 base 归零）
+                    setChronometerCountDown(R.id.widget_countdown, true)
+                } else {
+                    setViewVisibility(R.id.widget_countdown, android.view.View.INVISIBLE)
+                }
                 setOnClickPendingIntent(R.id.widget_root, openApp)
             }
             manager.updateAppWidget(id, views)

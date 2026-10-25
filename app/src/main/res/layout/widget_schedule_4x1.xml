@@ -38,13 +38,12 @@
             android:text="详情" />
     </LinearLayout>
 
-    <TextView
+    <Chronometer
         android:id="@+id/widget_countdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:textColor="@color/widget_accent"
         android:textSize="15sp"
-        android:textStyle="bold"
-        android:text="0:00" />
+        android:textStyle="bold" />
 </LinearLayout>

@@ -1,5 +1,5 @@
 {
-  "versionCode": 30,
-  "versionName": "1.13.1",
-  "changelog": "1. 修复桌面小组件与 APP 信息不一致的问题\n2. APP 内切换轮次 / 时间表时小组件立即同步\n3. 小组件文案与首页状态卡片完全对齐"
+  "versionCode": 31,
+  "versionName": "1.13.2",
+  "changelog": "1. 修复小组件倒计时冻结：改用系统 Chronometer，桌面端每秒自走\n2. 状态文案不再受系统后台限制影响\n3. 建议添加小组件后在系统设置中允许「后台自启动」"
 }
