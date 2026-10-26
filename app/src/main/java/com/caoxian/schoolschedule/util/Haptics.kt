@@ -27,20 +27,24 @@ object Haptics {
     /** 轻触感（拖动越过菜单边界） */
     fun tick(context: Context) {
         val v = vibrator(context) ?: return
-        if (Build.VERSION.SDK_INT >= 29) {
-            v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
-        } else {
-            v.vibrate(VibrationEffect.createOneShot(12, VibrationEffect.DEFAULT_AMPLITUDE))
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 29) {
+                v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+            } else {
+                v.vibrate(VibrationEffect.createOneShot(12, VibrationEffect.DEFAULT_AMPLITUDE))
+            }
         }
     }
 
     /** 确认感（松手确认切换） */
     fun confirm(context: Context) {
         val v = vibrator(context) ?: return
-        if (Build.VERSION.SDK_INT >= 29) {
-            v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-        } else {
-            v.vibrate(VibrationEffect.createOneShot(24, VibrationEffect.DEFAULT_AMPLITUDE))
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 29) {
+                v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            } else {
+                v.vibrate(VibrationEffect.createOneShot(24, VibrationEffect.DEFAULT_AMPLITUDE))
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 {
-  "versionCode": 43,
-  "versionName": "1.16.6",
-  "changelog": "1. 修复震动反馈无效果：改用系统预定义触觉效果（EFFECT_CLICK / EFFECT_TICK），强度明显且不受系统触摸振动设置拦截"
+  "versionCode": 44,
+  "versionName": "1.16.7",
+  "changelog": "1. 修复点击 / 拖动底栏闪退（补上 VIBRATE 权限声明，震动调用加防御性处理）"
 }
