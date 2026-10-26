@@ -424,6 +424,8 @@ fun ScheduleScreen(
                                 hapticsEnabled = it
                                 settings.hapticFeedbackEnabled = it
                             },
+                            cdnAccelerated = settings.cdnAccelerated,
+                            onCdnChange = { settings.cdnAccelerated = it },
                             showAllRound = showAllRound,
                             onShowAllRoundToggle = {
                                 showAllRound = it

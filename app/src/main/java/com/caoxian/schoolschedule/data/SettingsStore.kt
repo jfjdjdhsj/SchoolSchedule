@@ -116,6 +116,15 @@ class SettingsStore(context: Context) {
         }
 
     /**
+     * 更新加速源：开启走 jsDelivr CDN（默认），关闭使用 GitHub 官方源。
+     */
+    var cdnAccelerated: Boolean
+        get() = prefs.getBoolean(KEY_CDN, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_CDN, value).apply()
+        }
+
+    /**
      * 触觉反馈：底栏拖动 / 切换菜单时的震动（可关）。
      */
     var hapticFeedbackEnabled: Boolean
@@ -147,6 +156,7 @@ class SettingsStore(context: Context) {
         const val KEY_GLASS_ENGINE = "glass_engine"
         const val KEY_APP_LANGUAGE = "app_language"
         const val KEY_HAPTICS = "haptic_feedback_enabled"
+        const val KEY_CDN = "cdn_accelerated"
 
         /** 应用语言取值：跟随系统 / 简体中文 / English / 繁體中文 */
         const val LANG_SYSTEM = "system"

@@ -1,6 +1,7 @@
 package com.caoxian.schoolschedule.util
 
 import android.content.Context
+import com.caoxian.schoolschedule.data.SettingsStore
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -31,9 +32,11 @@ data class UpdateInfo(
     /** Release 资产下载地址；为 null 时按 tag 构造 */
     val assetUrl: String? = null,
 ) {
-    /** APK 下载直连地址（下载时再按加速源前缀套用） */
-    val apkUrl: String
-        get() = assetUrl ?: UpdateConfig.releaseDownloadUrl("v$versionName")
+    /** APK 下载候选地址（按加速源开关构造，依次尝试） */
+    fun apkUrls(cdn: Boolean): List<String> {
+        assetUrl?.let { return listOf(it) }
+        return UpdateConfig.releaseDownloadUrls("v$versionName", cdn)
+    }
 }
 
 /** 更新日志条目（GitHub Release：版本 / 日期 / 说明） */
@@ -66,8 +69,8 @@ sealed interface UpdateState {
 /**
  * 应用内更新控制器：检查更新、下载 APK、拉起安装。
  *
- * - 检查更新优先走 jsDelivr CDN，再尝试 GitHub 直连（见 [UpdateConfig.updateJsonUrls]）；
- * - 下载 APK 对直连地址依次套用加速源前缀（见 [UpdateConfig.MIRRORS]）；
+ * - 检查更新：加速源开启时 jsDelivr 优先（可关，见 [UpdateConfig.updateJsonUrls]）；
+ * - 下载 APK：加速源开启时 jsDelivr（按发布标签分发）优先，官方源兜底；
  * - 安装前检查「未知来源应用安装」权限，未授权时跳转系统设置页。
  */
 class UpdateController(private val context: Context) {
@@ -115,7 +118,7 @@ class UpdateController(private val context: Context) {
         state = UpdateState.Checking
         scope.launch {
             try {
-                val info = UpdateChecker.check()
+                val info = UpdateChecker.check(SettingsStore(context).cdnAccelerated)
                 if (isNewest(info)) {
                     if (!silent) state = UpdateState.Latest
                     else state = UpdateState.Idle
@@ -138,7 +141,7 @@ class UpdateController(private val context: Context) {
                 val dir = File(context.getExternalFilesDir("update") ?: File(context.filesDir, "update"), "")
                 dir.mkdirs()
                 val target = File(dir, "SchoolSchedule-${info.versionName}.apk")
-                UpdateChecker.downloadApk(info, target) { progress ->
+                UpdateChecker.downloadApk(info, target, SettingsStore(context).cdnAccelerated) { progress ->
                     state = UpdateState.Downloading(progress)
                 }
                 state = UpdateState.ReadyToInstall(target)
@@ -196,14 +199,14 @@ object UpdateChecker {
      * 检查更新：优先 GitHub Releases API（含更新日志与 APK 资产地址）；
      * API 不可达时回退 update.json（jsDelivr → GitHub 直连）。全部失败抛异常。
      */
-    suspend fun check(): UpdateInfo = withContext(Dispatchers.IO) {
+    suspend fun check(cdn: Boolean): UpdateInfo = withContext(Dispatchers.IO) {
         try {
             return@withContext checkViaReleasesApi()
         } catch (_: Exception) {
             // 回退到 update.json
         }
         var lastError: Exception? = null
-        for (url in UpdateConfig.updateJsonUrls()) {
+        for (url in UpdateConfig.updateJsonUrls(cdn)) {
             try {
                 val body = httpGet(url) ?: continue
                 val json = JSONObject(body)
@@ -259,12 +262,13 @@ object UpdateChecker {
     suspend fun downloadApk(
         info: UpdateInfo,
         target: File,
+        cdn: Boolean,
         onProgress: (Int) -> Unit,
     ): Unit = withContext(Dispatchers.IO) {
         var lastError: Exception? = null
-        for (prefix in UpdateConfig.MIRRORS) {
+        for (url in info.apkUrls(cdn)) {
             try {
-                httpDownload(prefix + info.apkUrl, target, onProgress)
+                httpDownload(url, target, onProgress)
                 return@withContext
             } catch (e: Exception) {
                 lastError = e
@@ -297,7 +301,7 @@ object UpdateChecker {
     ): Pair<List<ReleaseLogEntry>?, String?> = withContext(Dispatchers.IO) {
         val logPrefs = context.getSharedPreferences("sjb_update_log", Context.MODE_PRIVATE)
         val api = "https://api.github.com/repos/${UpdateConfig.REPO_OWNER}/${UpdateConfig.REPO_NAME}/releases?per_page=30"
-        val urls = listOf(api) + UpdateConfig.MIRRORS.filter { it.isNotEmpty() }.map { it + api }
+        val urls = listOf(api)
         var result: List<ReleaseLogEntry>? = null
         for (url in urls) {
             try {

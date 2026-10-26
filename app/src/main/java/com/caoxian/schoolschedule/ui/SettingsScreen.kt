@@ -91,6 +91,8 @@ fun SettingsScreen(
     onGlassEngineChange: (String) -> Unit,
     hapticsEnabled: Boolean,
     onHapticsChange: (Boolean) -> Unit,
+    cdnAccelerated: Boolean,
+    onCdnChange: (Boolean) -> Unit,
     showAllRound: Boolean,
     onShowAllRoundToggle: (Boolean) -> Unit,
     themeMode: String,

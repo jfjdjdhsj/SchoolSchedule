@@ -15,8 +15,8 @@ android {
         applicationId = "com.caoxian.schoolschedule"
         minSdk = 26
         targetSdk = 37
-        versionCode = 45
-        versionName = "1.16.8"
+        versionCode = 46
+        versionName = "1.17.0"
 
         // 匿名统计后端配置：地址与密钥放在本地 local.properties（不进仓库）
         val localProps = Properties().apply {

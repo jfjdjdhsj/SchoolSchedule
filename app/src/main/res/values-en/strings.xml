@@ -183,4 +183,6 @@
     <string name="glass_style_off">Off</string>
     <string name="settings_haptics_title">Haptic Feedback</string>
     <string name="settings_haptics_summary">Vibration when dragging or switching bottom bar items</string>
+    <string name="settings_cdn_title">CDN Acceleration</string>
+    <string name="settings_cdn_summary">Use jsDelivr CDN for update checks and downloads; off = GitHub official</string>
 </resources>

@@ -160,4 +160,6 @@
     <string name="glass_style_off">オフ</string>
     <string name="settings_haptics_title">触覚フィードバック</string>
     <string name="settings_haptics_summary">バーのドラッグ・切替時の振動</string>
+    <string name="settings_cdn_title">CDN 高速化</string>
+    <string name="settings_cdn_summary">jsDelivr CDN で更新の確認とダウンロードを高速化（オフ = GitHub 公式）</string>
 </resources>

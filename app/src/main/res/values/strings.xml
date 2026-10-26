@@ -183,4 +183,6 @@
     <string name="glass_style_off">关闭</string>
     <string name="settings_haptics_title">震动反馈</string>
     <string name="settings_haptics_summary">底栏拖动、切换菜单时的触觉反馈</string>
+    <string name="settings_cdn_title">加速源</string>
+    <string name="settings_cdn_summary">开启使用 jsDelivr CDN 加速更新检查与下载；关闭使用 GitHub 官方源</string>
 </resources>

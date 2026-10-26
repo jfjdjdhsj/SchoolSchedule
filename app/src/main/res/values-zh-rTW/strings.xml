@@ -183,4 +183,6 @@
     <string name="glass_style_off">關閉</string>
     <string name="settings_haptics_title">震動回饋</string>
     <string name="settings_haptics_summary">底欄拖動、切換選單時的觸覺回饋</string>
+    <string name="settings_cdn_title">加速來源</string>
+    <string name="settings_cdn_summary">開啟使用 jsDelivr CDN 加速更新檢查與下載；關閉使用 GitHub 官方來源</string>
 </resources>

@@ -1,5 +1,5 @@
 {
-  "versionCode": 45,
-  "versionName": "1.16.8",
-  "changelog": "1. 全新安装的用户默认使用 KSU 液态玻璃底栏（老用户升级设置不变）"
+  "versionCode": 46,
+  "versionName": "1.17.0",
+  "changelog": "1. 新增「加速源」开关（设置 → 更新，默认开启）：开启走 jsDelivr CDN，关闭使用 GitHub 官方源\n2. 移除第三方加速源（ghfast / gh-proxy），APK 随发布标签提交进仓库由 jsDelivr 直接分发\n3. 全新安装默认 KSU 液态玻璃底栏"
 }

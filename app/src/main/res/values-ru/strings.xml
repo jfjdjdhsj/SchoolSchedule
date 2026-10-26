@@ -160,4 +160,6 @@
     <string name="glass_style_off">Выкл</string>
     <string name="settings_haptics_title">Виброотклик</string>
     <string name="settings_haptics_summary">Вибрация при перетаскивании и переключении панели</string>
+    <string name="settings_cdn_title">CDN-ускорение</string>
+    <string name="settings_cdn_summary">jsDelivr CDN для проверки и загрузки обновлений; выкл = GitHub</string>
 </resources>

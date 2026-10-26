@@ -27,27 +27,40 @@ object UpdateConfig {
     /** GitHub Releases API（检查更新首选） */
     const val RELEASES_API = "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
 
-    /** 加速源前缀：依次尝试，空串 = GitHub 直连兜底 */
-    val MIRRORS = listOf(
-        "https://ghfast.top/",
-        "https://gh-proxy.com/",
-        "",
-    )
-
-    /** jsDelivr CDN（国内可达，API 不可达时回退读 update.json） */
-    private const val JSDELIVR = "https://cdn.jsdelivr.net/gh/$REPO_OWNER/$REPO_NAME@$BRANCH/"
-
-    /** GitHub 直连 */
+    /** GitHub 官方源（Releases API / 直连下载 / raw） */
     private const val GITHUB_RAW = "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/$BRANCH/"
+    private const val GITHUB_DOWNLOAD =
+        "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/"
 
-    /** 更新信息 update.json 的候选地址（API 失败时的回退，按顺序尝试） */
-    fun updateJsonUrls(): List<String> = listOf(
-        JSDELIVR + "update.json",
-        GITHUB_RAW + "update.json",
-    )
+    /** jsDelivr CDN（国内可达）：update.json 走 main 分支，APK 走发布标签（APK 已随标签提交进仓库） */
+    private const val JSDELIVR = "https://cdn.jsdelivr.net/gh/$REPO_OWNER/$REPO_NAME"
+    private fun jsDelivrAt(ref: String) = "$JSDELIVR@$ref/"
 
-    /** Release 资产下载直连地址（下载时再按 [MIRRORS] 套加速源） */
-    fun releaseDownloadUrl(tag: String): String =
-        "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$tag/" +
-            "SchoolSchedule-$tag-release.apk"
+    /** APK 资产名（与 GitHub Release 资产一致） */
+    fun apkAssetName(tag: String) = "SchoolSchedule-$tag-release.apk"
+
+    /**
+     * update.json 候选地址（Releases API 失败时的回退，按顺序尝试）。
+     * @param cdn true = 加速源开启（jsDelivr 优先 + 官方兜底）；false = 仅 GitHub 官方
+     */
+    fun updateJsonUrls(cdn: Boolean): List<String> =
+        if (cdn) {
+            listOf(jsDelivrAt(BRANCH) + "update.json", GITHUB_RAW + "update.json")
+        } else {
+            listOf(GITHUB_RAW + "update.json")
+        }
+
+    /**
+     * APK 下载候选地址（按顺序尝试）。
+     * 加速源开启时优先 jsDelivr（APK 已随发布标签提交进仓库，jsDelivr 按标签分发），
+     * 失败回退 GitHub 官方 Releases；关闭时仅官方源。
+     */
+    fun releaseDownloadUrls(tag: String, cdn: Boolean): List<String> {
+        val official = GITHUB_DOWNLOAD + "$tag/" + apkAssetName(tag)
+        return if (cdn) {
+            listOf(jsDelivrAt(tag) + apkAssetName(tag), official)
+        } else {
+            listOf(official)
+        }
+    }
 }
