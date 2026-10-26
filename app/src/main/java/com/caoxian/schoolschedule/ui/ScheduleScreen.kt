@@ -322,7 +322,17 @@ fun ScheduleScreen(
                             Modifier
                         },
                     )
-                    .prismalGlassLayer(backdrop),
+                    .prismalGlassLayer(backdrop)
+                    // KSU 玻璃的记录层补不透明背景：AGSL 折射 / 模糊对「半透明文字 +
+                    // 透明背景」像素运算时 alpha 会失控聚集成实心色块（分组标题等
+                    // 半透明灰文字尤其明显）；补上底色后所有采样像素均为不透明
+                    .then(
+                        if (glassEngine == "ksu") {
+                            Modifier.background(colorScheme.background)
+                        } else {
+                            Modifier
+                        },
+                    ),
             ) {
                 HorizontalPager(
                     state = pagerState,

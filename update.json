@@ -1,5 +1,5 @@
 {
-  "versionCode": 39,
-  "versionName": "1.16.2",
-  "changelog": "1. 修复 KSU 液态玻璃下文字渲染错乱（采样源改挂 Prismal 层外侧，记录最终合成画面）"
+  "versionCode": 40,
+  "versionName": "1.16.3",
+  "changelog": "1. 修复 KSU 液态玻璃下分组标题（早晨/上午/晚自习/外观/更新等）变成实心色块的问题（采样层补不透明背景）"
 }
