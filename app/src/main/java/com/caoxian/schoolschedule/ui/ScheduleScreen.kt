@@ -81,6 +81,7 @@ import com.caoxian.schoolschedule.util.currentClockText
 import com.caoxian.schoolschedule.util.currentMinutes
 import com.caoxian.schoolschedule.util.effectiveRound
 import com.caoxian.schoolschedule.util.fmtTime
+import com.caoxian.schoolschedule.util.Haptics
 import com.caoxian.schoolschedule.util.formatDuration
 import com.caoxian.schoolschedule.util.ScheduleI18n
 import com.caoxian.schoolschedule.util.visibleRounds
@@ -859,7 +860,7 @@ private fun GlassBottomBar(
                                     // 水平拖动成立：全量增压 + 触觉提示
                                     dragging = true
                                     gestureScope.launch { glassBoost.animateTo(1f, boostSpring) }
-                                    if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                    if (hapticsEnabled) Haptics.tick(view.context)
                                 } else if (abs(totalDy) > slop) {
                                     // 垂直手势：不接管
                                     break
@@ -872,7 +873,7 @@ private fun GlassBottomBar(
                                 if (index != lastIndex) {
                                     lastIndex = index
                                     onTabSelected(index)
-                                    if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                    if (hapticsEnabled) Haptics.tick(view.context)
                                 }
                                 change.consume()
                             }
@@ -882,10 +883,10 @@ private fun GlassBottomBar(
                             // 短按（含长按不动后抬起）：按落点所在菜单切换
                             val index = (lastX / tabWidth).toInt().coerceIn(0, tabsCount - 1)
                             onTabSelected(index)
-                            if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            if (hapticsEnabled) Haptics.confirm(view.context)
                         } else {
                             // 拖动结束：确认触觉
-                            if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            if (hapticsEnabled) Haptics.confirm(view.context)
                         }
                         gestureScope.launch { glassBoost.animateTo(0f, boostSpring) }
                     }

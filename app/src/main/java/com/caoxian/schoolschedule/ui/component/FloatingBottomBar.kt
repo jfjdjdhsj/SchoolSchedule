@@ -71,6 +71,7 @@ import com.caoxian.schoolschedule.ui.component.liquid.innerShadow
 import com.caoxian.schoolschedule.ui.component.liquid.lens
 import com.caoxian.schoolschedule.ui.component.liquid.rememberCombinedBackdrop
 import com.caoxian.schoolschedule.ui.component.liquid.vibrancy
+import com.caoxian.schoolschedule.util.Haptics
 import com.caoxian.schoolschedule.ui.component.miuix.animation.DampedDragAnimation
 import com.caoxian.schoolschedule.ui.component.miuix.animation.InteractiveHighlight
 import top.yukonga.miuix.kmp.blur.Backdrop
@@ -268,7 +269,7 @@ fun FloatingBottomBar(
         if (currentIndex != target) {
             currentIndex = target
             onSelectedUpdated(target)
-            if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            if (hapticsEnabled) Haptics.tick(view.context)
         }
     }
 

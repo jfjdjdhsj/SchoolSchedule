@@ -1,5 +1,5 @@
 {
-  "versionCode": 42,
-  "versionName": "1.16.5",
-  "changelog": "1. KSU 液态玻璃底栏：拖动经过菜单实时切换界面（无需松手，带触觉反馈）\n2. 新增「震动反馈」开关（设置 → 显示）：底栏拖动 / 切换菜单的触觉反馈可开关"
+  "versionCode": 43,
+  "versionName": "1.16.6",
+  "changelog": "1. 修复震动反馈无效果：改用系统预定义触觉效果（EFFECT_CLICK / EFFECT_TICK），强度明显且不受系统触摸振动设置拦截"
 }
