@@ -309,6 +309,8 @@ fun ScheduleScreen(
                 }
             }
 
+            val systemDark = (LocalConfiguration.current.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -328,7 +330,14 @@ fun ScheduleScreen(
                     // 半透明灰文字尤其明显）；补上底色后所有采样像素均为不透明
                     .then(
                         if (glassEngine == "ksu") {
-                            Modifier.background(colorScheme.background)
+                            // 与窗口背景完全一致（深色 #121212 / 浅色 白），保证观感不变
+                            Modifier.background(
+                                when (themeMode) {
+                                    SettingsStore.THEME_MODE_LIGHT -> Color.White
+                                    SettingsStore.THEME_MODE_DARK -> Color(0xFF121212)
+                                    else -> if (systemDark) Color(0xFF121212) else Color.White
+                                },
+                            )
                         } else {
                             Modifier
                         },
