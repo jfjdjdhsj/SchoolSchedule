@@ -174,4 +174,7 @@
     <string name="round_all">All</string>
     <string name="round_first_short">R1</string>
     <string name="round_second_short">R2</string>
+    <string name="duration_h_m">%1$d h %2$d min</string>
+    <string name="duration_h">%1$d h</string>
+    <string name="duration_m">%1$d min</string>
 </resources>

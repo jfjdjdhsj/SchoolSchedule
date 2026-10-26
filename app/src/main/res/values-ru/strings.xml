@@ -151,4 +151,7 @@
     <string name="round_all">Все</string>
     <string name="round_first_short">1-я</string>
     <string name="round_second_short">2-я</string>
+    <string name="duration_h_m">%1$d ч %2$d мин</string>
+    <string name="duration_h">%1$d ч</string>
+    <string name="duration_m">%1$d мин</string>
 </resources>

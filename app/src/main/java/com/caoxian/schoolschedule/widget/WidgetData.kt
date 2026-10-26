@@ -65,7 +65,7 @@ object WidgetData {
         // 休息中
         status.currentBreaks.firstOrNull()?.let { br ->
             val detail = status.nextEntry?.let {
-                context.getString(R.string.status_next_distance, ScheduleI18n.entryLabel(context, it), formatDuration(it.startMinute - nowMinute))
+                context.getString(R.string.status_next_distance, ScheduleI18n.entryLabel(context, it), ScheduleI18n.duration(context, it.startMinute - nowMinute))
             } ?: br.timeText
             return Texts(
                 stateLabel = context.getString(R.string.status_in_break, br.kind.label(context)),

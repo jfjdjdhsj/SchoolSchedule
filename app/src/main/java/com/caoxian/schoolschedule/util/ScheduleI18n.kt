@@ -84,6 +84,18 @@ object ScheduleI18n {
 
     fun effective(context: Context, text: String): String = effectiveMap.localize(context, text)
 
+    /** 时长本地化（如「1小时30分钟」/ "1 h 30 min"） */
+    fun duration(context: Context, totalMinutes: Int): String {
+        if (totalMinutes <= 0) return context.getString(R.string.duration_m, 0)
+        val h = totalMinutes / 60
+        val m = totalMinutes % 60
+        return when {
+            totalMinutes < 60 -> context.getString(R.string.duration_m, totalMinutes)
+            m == 0 -> context.getString(R.string.duration_h, h)
+            else -> context.getString(R.string.duration_h_m, h, m)
+        }
+    }
+
     /** 备注本地化（如「不能提前下课」） */
     fun note(context: Context, text: String): String =
         if (text == "不能提前下课") context.getString(R.string.note_no_leave) else text

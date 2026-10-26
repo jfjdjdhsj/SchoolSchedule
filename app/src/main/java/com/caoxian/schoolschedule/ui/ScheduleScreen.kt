@@ -1042,7 +1042,7 @@ fun BreakRow(
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
-            text = "${breakPeriod.timeText} · ${formatDuration(breakPeriod.durationMinutes)}",
+            text = "${breakPeriod.timeText} · ${ScheduleI18n.duration(context, breakPeriod.durationMinutes)}",
             color = if (isCurrent) colorScheme.primary else colorScheme.onSurfaceVariantSummary,
             fontSize = 12.sp,
             fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
@@ -1095,7 +1095,7 @@ fun NowStatusCard(
                     if (current.any { it.endMinute != null } && remain > 0) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = stringResource(R.string.status_remaining_class, formatDuration(remain)),
+                            text = stringResource(R.string.status_remaining_class, ScheduleI18n.duration(context, remain)),
                             color = colorScheme.primary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -1127,14 +1127,14 @@ fun NowStatusCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stringResource(R.string.status_break_left, br.timeText, formatDuration(br.endMinute - status.nowMinute)),
+                        text = stringResource(R.string.status_break_left, br.timeText, ScheduleI18n.duration(context, br.endMinute - status.nowMinute)),
                         color = colorScheme.onTertiaryContainer,
                         fontSize = 15.sp,
                     )
                     status.nextEntry?.let { next ->
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = stringResource(R.string.status_next_distance, entryLabel(context, next), formatDuration(next.startMinute - status.nowMinute)),
+                            text = stringResource(R.string.status_next_distance, entryLabel(context, next), ScheduleI18n.duration(context, next.startMinute - status.nowMinute)),
                             color = colorScheme.primary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -1158,7 +1158,7 @@ fun NowStatusCard(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = stringResource(R.string.status_until_start, formatDuration(next.startMinute - status.nowMinute)),
+                        text = stringResource(R.string.status_until_start, ScheduleI18n.duration(context, next.startMinute - status.nowMinute)),
                         color = colorScheme.primary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
@@ -1181,7 +1181,7 @@ fun NowStatusCard(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = stringResource(R.string.status_until_break, formatDuration(br.startMinute - status.nowMinute)),
+                        text = stringResource(R.string.status_until_break, ScheduleI18n.duration(context, br.startMinute - status.nowMinute)),
                         color = colorScheme.primary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,

@@ -495,7 +495,12 @@ fun SettingsScreen(
                             LocaleList.forLanguageTags(value)
                         }
                 } else {
-                    (context as? Activity)?.recreate()
+                    // Android 13 以下无系统级应用语言 API，只能重建 Activity 应用新语言；
+                    // 去掉转场动画以减轻黑屏闪烁观感（13+ 走 LocaleManager，无重建）
+                    (context as? Activity)?.apply {
+                        window.setWindowAnimations(0)
+                        recreate()
+                    }
                 }
             },
             onDismiss = { showLanguageDialog = false },

@@ -174,4 +174,7 @@
     <string name="round_all">全部</string>
     <string name="round_first_short">一輪</string>
     <string name="round_second_short">二輪</string>
+    <string name="duration_h_m">%1$d小時%2$d分鐘</string>
+    <string name="duration_h">%1$d小時</string>
+    <string name="duration_m">%1$d分鐘</string>
 </resources>
