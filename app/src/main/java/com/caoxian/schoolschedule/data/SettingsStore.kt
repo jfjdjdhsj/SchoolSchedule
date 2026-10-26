@@ -103,7 +103,12 @@ class SettingsStore(context: Context) {
     var glassEngine: String
         get() {
             prefs.getString(KEY_GLASS_ENGINE, null)?.let { return it }
-            return if (prefs.getBoolean(KEY_BOTTOM_BAR_GLASS, true)) GLASS_ENGINE_PRISMAL else GLASS_ENGINE_OFF
+            // 全新安装（无任何历史设置）：默认 KSU 液态玻璃；
+            // 老用户升级：按旧「底栏液态玻璃」开关回退为 Prismal / 关闭
+            if (prefs.contains(KEY_BOTTOM_BAR_GLASS)) {
+                return if (prefs.getBoolean(KEY_BOTTOM_BAR_GLASS, true)) GLASS_ENGINE_PRISMAL else GLASS_ENGINE_OFF
+            }
+            return GLASS_ENGINE_KSU
         }
         set(value) {
             val v = if (value == GLASS_ENGINE_MIUI) GLASS_ENGINE_PRISMAL else value

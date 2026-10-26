@@ -1,5 +1,5 @@
 {
-  "versionCode": 44,
-  "versionName": "1.16.7",
-  "changelog": "1. 修复点击 / 拖动底栏闪退（补上 VIBRATE 权限声明，震动调用加防御性处理）"
+  "versionCode": 45,
+  "versionName": "1.16.8",
+  "changelog": "1. 全新安装的用户默认使用 KSU 液态玻璃底栏（老用户升级设置不变）"
 }
