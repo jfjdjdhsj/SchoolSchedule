@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -210,6 +211,7 @@ fun FloatingBottomBar(
     tabsCount: Int,
     isDark: Boolean,
     isBlurEnabled: Boolean = true,
+    expandWidth: Boolean = false,
     content: @Composable RowScope.((Int) -> Unit) -> Unit
 ) {
     val isInDark = isDark
@@ -332,7 +334,7 @@ fun FloatingBottomBar(
     val combinedBackdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop)
 
     Box(
-        modifier = modifier.width(IntrinsicSize.Min),
+        modifier = if (expandWidth) modifier.fillMaxWidth() else modifier.width(IntrinsicSize.Min),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(

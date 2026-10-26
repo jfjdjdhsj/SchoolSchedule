@@ -581,16 +581,19 @@ private fun KsuGlassBottomBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
+            // 与 Prismal 底栏一致的外边距与高度，保证两种效果尺寸相同、可直接对比
+            .padding(horizontal = 24.dp)
             .padding(bottom = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         FloatingBottomBar(
-            modifier = Modifier,
+            modifier = Modifier.fillMaxWidth(),
             selectedIndex = selectedTab,
             onSelected = onTabSelected,
             backdrop = backdrop,
             tabsCount = 2,
             isDark = isDark,
+            expandWidth = true,
         ) { activateTab ->
             FloatingBottomBarItem(selected = selectedTab == 0, onClick = { activateTab(0) }) {
                 KsuTabContent(selected = selectedTab == 0, icon = HomeIcon, label = stringResource(R.string.nav_home))
@@ -602,16 +605,29 @@ private fun KsuGlassBottomBar(
     }
 }
 
-/** KSU 底栏标签内容：图标 + 文字（颜色跟随 LocalContentColor，选中态由指示器胶囊呈现） */
+/** KSU 底栏标签内容：尺寸与 Prismal 的 GlassTabContent 一致（图标 22dp / 文字 10sp） */
 @Composable
 private fun KsuTabContent(selected: Boolean, icon: ImageVector, label: String) {
-    val color = LocalContentColor.current
+    val colorScheme = MiuixTheme.colorScheme
+    // 选中态由指示器胶囊承载主色折射内容；未选中用次级色
+    val tint = if (selected) colorScheme.primary else colorScheme.onSurfaceVariantSummary
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Icon(imageVector = icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
-        Text(text = label, color = color, fontSize = 11.sp, maxLines = 1)
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = tint,
+            modifier = Modifier.size(22.dp),
+        )
+        Text(
+            text = label,
+            color = tint,
+            fontSize = 10.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            maxLines = 1,
+        )
     }
 }
 
