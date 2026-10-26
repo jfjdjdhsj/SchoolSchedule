@@ -1,5 +1,5 @@
 {
-  "versionCode": 38,
-  "versionName": "1.16.1",
-  "changelog": "1. KSU 液态玻璃底栏尺寸与 Prismal 对齐：铺满宽度、同外边距、标签大小一致"
+  "versionCode": 39,
+  "versionName": "1.16.2",
+  "changelog": "1. 修复 KSU 液态玻璃下文字渲染错乱（采样源改挂 Prismal 层外侧，记录最终合成画面）"
 }

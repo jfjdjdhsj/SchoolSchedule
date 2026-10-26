@@ -312,14 +312,17 @@ fun ScheduleScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .prismalGlassLayer(backdrop)
+                    // KSU 采样源必须挂在 Prismal 层【外】：
+                    // 记录最终合成画面（Prismal 离屏层内部可能带缩放/偏移，
+                    // 挂在内层会导致玻璃回放错位——文字重影 / 采样到错误区域）
                     .then(
                         if (glassEngine == "ksu") {
                             Modifier.layerBackdrop(ksuBackdrop)
                         } else {
                             Modifier
                         },
-                    ),
+                    )
+                    .prismalGlassLayer(backdrop),
             ) {
                 HorizontalPager(
                     state = pagerState,
