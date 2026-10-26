@@ -138,6 +138,8 @@ class SettingsStore(context: Context) {
         const val LANG_ZH = "zh-CN"
         const val LANG_EN = "en"
         const val LANG_ZH_TW = "zh-TW"
+        const val LANG_JA = "ja"
+        const val LANG_RU = "ru"
 
         const val THEME_MODE_SYSTEM = "System"
         const val THEME_MODE_LIGHT = "Light"

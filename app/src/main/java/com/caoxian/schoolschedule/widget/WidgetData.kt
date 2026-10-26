@@ -4,9 +4,10 @@ import android.content.Context
 import com.caoxian.schoolschedule.data.SettingsStore
 import com.caoxian.schoolschedule.data.allTimetables
 import com.caoxian.schoolschedule.data.computeBreaks
+import com.caoxian.schoolschedule.data.label
 import com.caoxian.schoolschedule.R
 import com.caoxian.schoolschedule.data.Round
-import com.caoxian.schoolschedule.data.label
+import com.caoxian.schoolschedule.util.ScheduleI18n
 import com.caoxian.schoolschedule.ui.computeStatus
 import com.caoxian.schoolschedule.util.currentMinutes
 import com.caoxian.schoolschedule.util.currentSecondOfDay
@@ -50,7 +51,7 @@ object WidgetData {
         // 进行中：标题 = 多节点名称拼接；详情 = 时间段；倒计时 = 距最近结束
         if (status.currentEntries.isNotEmpty()) {
             val current = status.currentEntries
-            val state = current.joinToString(" · ") { it.label }
+            val state = current.joinToString(" · ") { ScheduleI18n.entryLabel(context, it) }
             val times = current.joinToString(" · ") { it.timeText }
             val latestEnd = current.maxOf { it.endForStatus }
             val remainSec = latestEnd * 60 - nowSec
@@ -64,7 +65,7 @@ object WidgetData {
         // 休息中
         status.currentBreaks.firstOrNull()?.let { br ->
             val detail = status.nextEntry?.let {
-                context.getString(R.string.status_next_distance, it.label, formatDuration(it.startMinute - nowMinute))
+                context.getString(R.string.status_next_distance, ScheduleI18n.entryLabel(context, it), formatDuration(it.startMinute - nowMinute))
             } ?: br.timeText
             return Texts(
                 stateLabel = context.getString(R.string.status_in_break, br.kind.label(context)),
@@ -78,7 +79,7 @@ object WidgetData {
         status.nextEntry?.let { next ->
             return Texts(
                 stateLabel = context.getString(R.string.status_upcoming_class),
-                detail = "${next.label} ${next.timeText}",
+                detail = context.getString(R.string.widget_next_detail, ScheduleI18n.entryLabel(context, next), next.timeText),
                 countdownPrefix = context.getString(R.string.widget_countdown_start),
                 countdownSec = next.startMinute * 60 - nowSec,
             )
@@ -88,7 +89,7 @@ object WidgetData {
         status.nextBreak?.let { br ->
             return Texts(
                 stateLabel = context.getString(R.string.status_upcoming_break),
-                detail = "${br.kind.label} ${br.timeText}",
+                detail = br.kind.label(context) + " " + br.timeText,
                 countdownPrefix = context.getString(R.string.widget_countdown_break),
                 countdownSec = br.startMinute * 60 - nowSec,
             )
@@ -97,7 +98,7 @@ object WidgetData {
         // 今日已结束
         return Texts(
             stateLabel = context.getString(R.string.status_day_over),
-            detail = entries.firstOrNull()?.let { context.getString(R.string.widget_tomorrow, fmtTime(it.startMinute), it.activity) } ?: context.getString(R.string.status_rest_early),
+            detail = entries.firstOrNull()?.let { context.getString(R.string.widget_tomorrow, fmtTime(it.startMinute), ScheduleI18n.activity(context, it.activity)) } ?: context.getString(R.string.status_rest_early),
             countdownPrefix = null,
             countdownSec = null,
         )

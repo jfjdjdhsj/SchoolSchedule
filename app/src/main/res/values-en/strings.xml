@@ -133,4 +133,45 @@
     <string name="widget_break_soon_detail">Break at %1$s (%2$s)</string>
     <string name="widget_next_detail">Next: %1$s %2$s</string>
     <string name="widget_tomorrow">Tomorrow %1$s %2$s</string>
+
+    <!-- 作息表数据（完全翻译） -->
+    <string name="sect_morning">Morning</string>
+    <string name="sect_am">Before noon</string>
+    <string name="sect_pm">Afternoon</string>
+    <string name="sect_evening">Evening study</string>
+    <string name="sect_bedtime">Bedtime</string>
+    <string name="act_wake_up">Wake up</string>
+    <string name="act_morning_read">Morning reading</string>
+    <string name="act_morning_ex">Morning exercise &amp; assembly</string>
+    <string name="act_breakfast">Breakfast</string>
+    <string name="act_prepare">Prep bell</string>
+    <string name="act_p1">Period 1</string>
+    <string name="act_p2">Period 2</string>
+    <string name="act_p3">Period 3</string>
+    <string name="act_p4">Period 4</string>
+    <string name="act_p5">Period 5</string>
+    <string name="act_p6">Period 6</string>
+    <string name="act_p7">Period 7</string>
+    <string name="act_lunch">Lunch</string>
+    <string name="act_noon_break">Noon break</string>
+    <string name="act_enrichment">Enrichment class</string>
+    <string name="act_dorm_check">Dorm inspection</string>
+    <string name="act_dinner">Dinner</string>
+    <string name="act_evening_study">Evening self-study</string>
+    <string name="act_to_canteen">Head to canteen</string>
+    <string name="act_depart">Depart from assembly point</string>
+    <string name="act_lights_out">Lights out</string>
+    <string name="note_no_leave">No early leaving</string>
+    <string name="tt_winter">Winter schedule</string>
+    <string name="tt_summer">Summer schedule</string>
+    <string name="tt_winter_full">Winter timetable</string>
+    <string name="tt_summer_full">Summer timetable</string>
+    <string name="school_name">Caoxian Advanced Technical School</string>
+    <string name="effective_winter">In effect from Oct 1, 2026</string>
+    <string name="effective_summer">In effect from May 1, 2026</string>
+    <string name="round_first">Round 1</string>
+    <string name="round_second">Round 2</string>
+    <string name="round_all">All</string>
+    <string name="round_first_short">R1</string>
+    <string name="round_second_short">R2</string>
 </resources>

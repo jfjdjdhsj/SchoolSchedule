@@ -1,6 +1,7 @@
 package com.caoxian.schoolschedule.ui
 
 import android.view.HapticFeedbackConstants
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -76,6 +77,7 @@ import com.caoxian.schoolschedule.util.currentMinutes
 import com.caoxian.schoolschedule.util.effectiveRound
 import com.caoxian.schoolschedule.util.fmtTime
 import com.caoxian.schoolschedule.util.formatDuration
+import com.caoxian.schoolschedule.util.ScheduleI18n
 import com.caoxian.schoolschedule.util.visibleRounds
 import com.caoxian.schoolschedule.util.UpdateController
 import com.caoxian.schoolschedule.util.UpdateState
@@ -147,9 +149,9 @@ fun ScheduleScreen(
     var glassEngine by remember { mutableStateOf(settings.glassEngine) }
     val colorScheme = MiuixTheme.colorScheme
     val density = LocalDensity.current
+    val context = LocalContext.current
 
     val timetable = remember(timetableId) { allTimetables.first { it.id == timetableId } }
-    val context = LocalContext.current
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -238,7 +240,7 @@ fun ScheduleScreen(
         when {
             currentEntry != null -> {
                 key = entryKey(currentEntry)
-                message = context.getString(R.string.locate_current, entryLabel(currentEntry))
+                message = context.getString(R.string.locate_current, entryLabel(context, currentEntry))
             }
             currentBreak != null -> {
                 key = breakKey(currentBreak)
@@ -247,7 +249,7 @@ fun ScheduleScreen(
             fallbackEntry != null &&
                 (fallbackBreak == null || fallbackEntry.startMinute <= fallbackBreak.startMinute) -> {
                 key = entryKey(fallbackEntry)
-                message = context.getString(R.string.locate_next_entry, entryLabel(fallbackEntry))
+                message = context.getString(R.string.locate_next_entry, entryLabel(context, fallbackEntry))
             }
             fallbackBreak != null -> {
                 key = breakKey(fallbackBreak)
@@ -338,13 +340,14 @@ fun ScheduleScreen(
                                             ClockText()
                                         }
                                         Text(
-                                            text = "${timetable.schoolName} · ${timetable.effectiveText}",
+                                            text = ScheduleI18n.timetable(context, timetable.schoolName) + " · " +
+                            ScheduleI18n.effective(context, timetable.effectiveText),
                                             color = colorScheme.onSurfaceVariantSummary,
                                             fontSize = 14.sp,
                                         )
                                     }
                                     TabRow(
-                                        tabs = allTimetables.map { it.shortName },
+                                        tabs = allTimetables.map { ScheduleI18n.timetable(context, it.shortName) },
                                         selectedTabIndex = allTimetables.indexOfFirst { it.id == timetable.id }
                                             .coerceAtLeast(0),
                                         onTabSelected = { index ->
@@ -354,7 +357,7 @@ fun ScheduleScreen(
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     )
                                     TabRowWithContour(
-                                        tabs = rounds.map { it.displayName },
+                                        tabs = rounds.map { ScheduleI18n.roundName(context, it.displayName) },
                                         selectedTabIndex = rounds.indexOf(activeRound).coerceAtLeast(0),
                                         onTabSelected = { index ->
                                             round = rounds[index]
@@ -899,7 +902,8 @@ fun ScheduleTimeline(
     modifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
 ) {
-    val sections = remember(entries) { entries.groupBy { it.section } }
+    val context = LocalContext.current
+        val sections = remember(entries) { entries.groupBy { it.section } }
     // 每个时段内：节点 key -> 其后方展示的休息段（同一空隙只挂一次，挂在最后一个结束该空隙的节点后）
     val breakAfterBySection = remember(entries, breaks) {
         sections.mapValues { (_, list) -> breaksAfterMap(list, breaks) }
@@ -925,7 +929,7 @@ fun ScheduleTimeline(
         sections.forEach { (section, list) ->
             item(key = "title_$section") {
                 SmallTitle(
-                    text = section,
+                    text = ScheduleI18n.section(context, section),
                     modifier = Modifier
                         .padding(horizontal = ContentInset)
                         .padding(top = 8.dp),
@@ -1014,6 +1018,7 @@ fun BreakRow(
     isCurrent: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val colorScheme = MiuixTheme.colorScheme
     Row(
         modifier = modifier
@@ -1030,7 +1035,7 @@ fun BreakRow(
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = breakPeriod.kind.label,
+            text = breakPeriod.kind.label(context),
             color = if (isCurrent) colorScheme.primary else colorScheme.onSurfaceVariantSummary,
             fontSize = 13.sp,
             fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
@@ -1074,7 +1079,7 @@ fun NowStatusCard(
                 status.currentEntries.isNotEmpty() -> {
                     val current = status.currentEntries
                     Text(
-                        text = current.joinToString(" · ") { entryLabel(it) },
+                        text = current.joinToString(" · ") { ScheduleI18n.entryLabel(context, it) },
                         color = colorScheme.primary,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
@@ -1102,7 +1107,7 @@ fun NowStatusCard(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = if (nextEntry != null) {
-                                stringResource(R.string.status_next_item, entryLabel(nextEntry), nextEntry.timeText)
+                                stringResource(R.string.status_next_item, entryLabel(context, nextEntry), nextEntry.timeText)
                             } else {
                                 stringResource(R.string.status_next_item, nextBreak!!.kind.label(context), nextBreak.timeText)
                             },
@@ -1129,7 +1134,7 @@ fun NowStatusCard(
                     status.nextEntry?.let { next ->
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = stringResource(R.string.status_next_distance, entryLabel(next), formatDuration(next.startMinute - status.nowMinute)),
+                            text = stringResource(R.string.status_next_distance, entryLabel(context, next), formatDuration(next.startMinute - status.nowMinute)),
                             color = colorScheme.primary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -1147,7 +1152,7 @@ fun NowStatusCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${entryLabel(next)} ${next.timeText}",
+                        text = "${entryLabel(context, next)} ${next.timeText}",
                         color = colorScheme.onTertiaryContainer,
                         fontSize = 15.sp,
                     )
@@ -1213,6 +1218,7 @@ fun EntryRow(
     showRoundBadge: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val colorScheme = MiuixTheme.colorScheme
     Row(
         modifier = modifier
@@ -1232,7 +1238,7 @@ fun EntryRow(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = entry.activity,
+                    text = ScheduleI18n.activity(context, entry.activity),
                     color = if (isCurrent) colorScheme.primary else colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
@@ -1240,7 +1246,7 @@ fun EntryRow(
                 if (showRoundBadge) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = entry.round.shortName,
+                        text = ScheduleI18n.roundShort(context, entry.round.shortName),
                         color = colorScheme.onSurfaceVariantSummary,
                         fontSize = 11.sp,
                         modifier = Modifier
@@ -1253,7 +1259,7 @@ fun EntryRow(
             // 下课时间 + 备注，如「9:05 下课 · 不能提前下课」
             val subText = buildList {
                 if (entry.endMinute != null) add(stringResource(R.string.timeline_class_over, fmtTime(entry.endMinute)))
-                if (entry.note != null) add(entry.note)
+                if (entry.note != null) add(ScheduleI18n.note(context, entry.note!!))
             }.joinToString(" · ")
             if (subText.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(2.dp))
@@ -1275,8 +1281,8 @@ fun EntryRow(
 }
 
 /** 节点标签：区分轮次时带上轮次名，如「第一轮 第四节」 */
-private fun entryLabel(entry: ScheduleEntry): String =
-    if (entry.round == Round.ALL) entry.activity else "${entry.round.displayName} ${entry.activity}"
+private fun entryLabel(context: Context, entry: ScheduleEntry): String =
+    ScheduleI18n.entryLabel(context, entry)
 
 /**
  * 隐私政策与匿名统计同意弹窗（首次启动展示）。

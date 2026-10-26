@@ -177,6 +177,8 @@ fun SettingsScreen(
                         SettingsStore.LANG_ZH -> "简体中文"
                         SettingsStore.LANG_EN -> "English"
                         SettingsStore.LANG_ZH_TW -> "繁體中文"
+                        SettingsStore.LANG_JA -> "日本語"
+                        SettingsStore.LANG_RU -> "Русский"
                         else -> stringResource(R.string.theme_system)
                     },
                     onClick = { showLanguageDialog = true },
@@ -478,6 +480,8 @@ fun SettingsScreen(
                 Option(SettingsStore.LANG_ZH, "简体中文", null),
                 Option(SettingsStore.LANG_EN, "English", null),
                 Option(SettingsStore.LANG_ZH_TW, "繁體中文", null),
+                Option(SettingsStore.LANG_JA, "日本語", null),
+                Option(SettingsStore.LANG_RU, "Русский", null),
             ),
             onSelect = { value ->
                 showLanguageDialog = false
