@@ -110,6 +110,16 @@ class SettingsStore(context: Context) {
             prefs.edit().putString(KEY_GLASS_ENGINE, v).apply()
         }
 
+    /**
+     * 应用语言（仅 Android 13 以下生效；13+ 由系统「应用语言」设置接管）。
+     * "system"（跟随系统，默认）/ "zh-CN" / "en" / "zh-TW"。
+     */
+    var appLanguage: String
+        get() = prefs.getString(KEY_APP_LANGUAGE, null) ?: LANG_SYSTEM
+        set(value) {
+            prefs.edit().putString(KEY_APP_LANGUAGE, value).apply()
+        }
+
     companion object {
         const val KEY_TIMETABLE = "timetable_id"
         const val KEY_ROUND = "round"
@@ -121,6 +131,13 @@ class SettingsStore(context: Context) {
         const val KEY_THEME_MODE = "theme_mode"
         const val KEY_THEME_COLOR = "theme_color"
         const val KEY_GLASS_ENGINE = "glass_engine"
+        const val KEY_APP_LANGUAGE = "app_language"
+
+        /** 应用语言取值：跟随系统 / 简体中文 / English / 繁體中文 */
+        const val LANG_SYSTEM = "system"
+        const val LANG_ZH = "zh-CN"
+        const val LANG_EN = "en"
+        const val LANG_ZH_TW = "zh-TW"
 
         const val THEME_MODE_SYSTEM = "System"
         const val THEME_MODE_LIGHT = "Light"

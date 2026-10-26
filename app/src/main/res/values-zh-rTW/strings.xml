@@ -71,6 +71,8 @@
     <string name="settings_theme_color_title">主題色</string>
     <string name="settings_theme_color_summary">以此為種子產生全套應用配色</string>
     <string name="theme_color_default">預設</string>
+    <string name="language_title">語言</string>
+    <string name="settings_language_summary">跟隨系統語言或手動切換</string>
     <string name="settings_group_display">顯示</string>
     <string name="settings_show_all_round">顯示「全部」輪次</string>
     <string name="settings_show_all_round_summary">在首頁輪次標籤中顯示混合兩輪安排的「全部」檢視</string>

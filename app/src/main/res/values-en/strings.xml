@@ -71,6 +71,8 @@
     <string name="settings_theme_color_title">Accent Color</string>
     <string name="settings_theme_color_summary">Seed color used to generate the full app palette</string>
     <string name="theme_color_default">Default</string>
+    <string name="language_title">Language</string>
+    <string name="settings_language_summary">Follow the system language or choose manually</string>
     <string name="settings_group_display">Display</string>
     <string name="settings_show_all_round">Show \"All\" round</string>
     <string name="settings_show_all_round_summary">Show the combined \"All\" view in home round tabs</string>

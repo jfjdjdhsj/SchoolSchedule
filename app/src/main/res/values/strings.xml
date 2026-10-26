@@ -71,6 +71,8 @@
     <string name="settings_theme_color_title">主题色</string>
     <string name="settings_theme_color_summary">以此为种子生成全套应用配色</string>
     <string name="theme_color_default">默认</string>
+    <string name="language_title">语言</string>
+    <string name="settings_language_summary">跟随系统语言或手动切换</string>
     <string name="settings_group_display">显示</string>
     <string name="settings_show_all_round">显示「全部」轮次</string>
     <string name="settings_show_all_round_summary">在首页轮次标签中显示混合两轮安排的「全部」视图</string>

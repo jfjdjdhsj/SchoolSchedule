@@ -39,7 +39,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Activity
+import android.app.LocaleManager
+import android.os.Build
 import android.widget.Toast
+import android.content.Context
+import android.os.LocaleList
 import com.caoxian.schoolschedule.R
 import com.caoxian.schoolschedule.data.SettingsStore
 import com.caoxian.schoolschedule.util.FeedbackSender
@@ -112,6 +117,7 @@ fun SettingsScreen(
     var showFeedbackDialog by remember { mutableStateOf(false) }
     var showLogDialog by remember { mutableStateOf(false) }
     var showOssDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -159,6 +165,21 @@ fun SettingsScreen(
                         (hex ?: "default") == themeColor || (hex != null && name == themeColor)
                     }?.first ?: if (themeColor == "default") stringResource(R.string.theme_color_default) else themeColor,
                     onClick = { showColorDialog = true },
+                )
+            }
+            // 语言（应用内切换；Android 13+ 走系统「应用语言」）
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                SelectRow(
+                    icon = MiuixIcons.Community,
+                    title = stringResource(R.string.language_title),
+                    summary = stringResource(R.string.settings_language_summary),
+                    value = when (currentAppLanguage(context)) {
+                        SettingsStore.LANG_ZH -> "简体中文"
+                        SettingsStore.LANG_EN -> "English"
+                        SettingsStore.LANG_ZH_TW -> "繁體中文"
+                        else -> stringResource(R.string.theme_system)
+                    },
+                    onClick = { showLanguageDialog = true },
                 )
             }
 
@@ -447,6 +468,36 @@ fun SettingsScreen(
         )
     }
 
+    // 语言弹窗：Android 13+ 写系统「应用语言」（小组件同步）；13 以下写偏好并重建
+    if (showLanguageDialog) {
+        OptionDialog(
+            title = stringResource(R.string.language_title),
+            selected = currentAppLanguage(context),
+            options = listOf(
+                Option(SettingsStore.LANG_SYSTEM, stringResource(R.string.theme_system), null),
+                Option(SettingsStore.LANG_ZH, "简体中文", null),
+                Option(SettingsStore.LANG_EN, "English", null),
+                Option(SettingsStore.LANG_ZH_TW, "繁體中文", null),
+            ),
+            onSelect = { value ->
+                showLanguageDialog = false
+                settings.appLanguage = value
+                if (Build.VERSION.SDK_INT >= 33) {
+                    val lm = context.getSystemService(LocaleManager::class.java)
+                    lm.applicationLocales =
+                        if (value == SettingsStore.LANG_SYSTEM) {
+                            LocaleList.getEmptyLocaleList()
+                        } else {
+                            LocaleList.forLanguageTags(value)
+                        }
+                } else {
+                    (context as? Activity)?.recreate()
+                }
+            },
+            onDismiss = { showLanguageDialog = false },
+        )
+    }
+
     // 主题色弹窗（Monet 动态取色预设）
     if (showColorDialog) {
         OptionDialog(
@@ -557,6 +608,17 @@ private data class Option(
     val dot: Color? = null,
     val sub: String? = null,
 )
+
+/** 当前生效的应用语言（LanguageTag）；"system" = 跟随系统 */
+private fun currentAppLanguage(context: Context): String {
+    if (Build.VERSION.SDK_INT >= 33) {
+        val first = context.getSystemService(LocaleManager::class.java)
+            .applicationLocales.get(0)
+        if (first != null) return first.toLanguageTag()
+        return SettingsStore.LANG_SYSTEM
+    }
+    return SettingsStore(context).appLanguage
+}
 
 /**
  * 更新日志弹窗：聚合 GitHub Releases 历史版本说明（最新在前，最多 30 条）。

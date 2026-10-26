@@ -1,10 +1,10 @@
 # 校园作息表（SchoolSchedule）
 
-基于 [MIUIX](https://compose-miuix-ui.github.io/miuix/zh_CN/)（Compose Multiplatform 界面组件库）开发的安卓作息时间表应用，内置**冬季 / 夏季两套作息时间表，支持一键切换**。当前版本 **v1.14.0**（versionCode 33）。
+基于 [MIUIX](https://compose-miuix-ui.github.io/miuix/zh_CN/)（Compose Multiplatform 界面组件库）开发的安卓作息时间表应用，内置**冬季 / 夏季两套作息时间表，支持一键切换**。当前版本 **v1.14.1**（versionCode 34）。
 
 ## 多语言（i18n）
 
-支持 **简体中文（默认）/ English / 繁體中文**，界面文案随系统语言自动切换（`values-en` / `values-zh-rTW`）。作息表内容（时段、活动名称等学校安排）为原始数据，不参与翻译。
+支持 **简体中文（默认）/ English / 繁體中文**。设置 → 外观 → 语言 可手动切换：Android 13+ 走系统「应用语言」（`LocaleManager`，桌面小组件同步生效），旧版本通过语言偏好 + Activity 重建即时生效。界面文案随系统语言自动切换（`values-en` / `values-zh-rTW`）。作息表内容（时段、活动名称等学校安排）为原始数据，不参与翻译。
 
 ## 版本发布流程（本地构建 + gh 发布）
 

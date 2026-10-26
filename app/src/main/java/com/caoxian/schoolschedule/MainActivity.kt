@@ -1,9 +1,12 @@
 package com.caoxian.schoolschedule
 
+import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import java.util.Locale
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -34,6 +37,27 @@ class MainActivity : ComponentActivity() {
 
     /** 应用内主题强制深浅（null = 跟随系统）；onConfigurationChanged 时保持 */
     private var forcedDark: Boolean? = null
+
+    /**
+     * 应用内语言覆盖（仅 Android 13 以下生效）：
+     * 读取设置中的语言偏好，用 createConfigurationContext 包裹基础 Context，
+     * 使 Compose 的 stringResource 走目标语言资源。
+     * Android 13+ 由系统「应用语言」（LocaleManager）接管，无需覆盖。
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(wrapLanguageContext(newBase))
+    }
+
+    private fun wrapLanguageContext(base: Context): Context {
+        if (Build.VERSION.SDK_INT >= 33) return base
+        val lang = SettingsStore(base).appLanguage
+        if (lang == SettingsStore.LANG_SYSTEM) return base
+        val locale = Locale.forLanguageTag(lang)
+        Locale.setDefault(locale)
+        val config = Configuration(base.resources.configuration)
+        config.setLocale(locale)
+        return base.createConfigurationContext(config)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
