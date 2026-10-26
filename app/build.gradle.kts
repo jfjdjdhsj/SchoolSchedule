@@ -15,8 +15,8 @@ android {
         applicationId = "com.caoxian.schoolschedule"
         minSdk = 26
         targetSdk = 37
-        versionCode = 36
-        versionName = "1.15.1"
+        versionCode = 37
+        versionName = "1.16.0"
 
         // 匿名统计后端配置：地址与密钥放在本地 local.properties（不进仓库）
         val localProps = Properties().apply {
@@ -100,6 +100,8 @@ dependencies {
 
     // 液态玻璃底栏（AGSL 折射 / RenderEffect 模糊 / 低版本磨砂自动降级）
     implementation(libs.prismal)
+    // KSU 风格液态玻璃底栏（miuix-blur：backdrop 采样 + RenderEffect 模糊 + AGSL 折射）
+    implementation(libs.miuix.blur)
 
     // 单元测试（当前时段高亮判定）
     testImplementation(libs.junit)

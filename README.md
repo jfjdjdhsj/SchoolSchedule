@@ -1,6 +1,13 @@
 # 校园作息表（SchoolSchedule）
 
-基于 [MIUIX](https://compose-miuix-ui.github.io/miuix/zh_CN/)（Compose Multiplatform 界面组件库）开发的安卓作息时间表应用，内置**冬季 / 夏季两套作息时间表，支持一键切换**。当前版本 **v1.15.1**（versionCode 36）。
+基于 [MIUIX](https://compose-miuix-ui.github.io/miuix/zh_CN/)（Compose Multiplatform 界面组件库）开发的安卓作息时间表应用，内置**冬季 / 夏季两套作息时间表，支持一键切换**。当前版本 **v1.16.0**（versionCode 37）。
+
+## 双玻璃引擎
+
+底栏液态玻璃支持两种实现（设置 → 外观 → 底栏玻璃效果 切换对比）：
+- **Prismal**（默认）：`PrismalAGSL` 引擎，自适应亮度 + 按压增压（折射/色散随进度增强）+ 顶部高光；
+- **KSU**：完整移植自 [KernelSU Manager](https://github.com/tiann/KernelSU) 的 `FloatingBottomBar`（miuix-blur），参数与 KSU 完全一致——vibrancy 饱和度 1.5、blur 4dp×4dp、lens 折射 24dp/24dp、40% 半透明底色、选中指示器二次折射 + 色散 0.5 + 内阴影，重力感应高光。
+Android 12 以下自动回退 Prismal 磨砂降级（AGSL 需 API 31+）。
 
 ## 多语言（i18n）
 

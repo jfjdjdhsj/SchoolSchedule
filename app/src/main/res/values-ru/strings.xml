@@ -154,4 +154,8 @@
     <string name="duration_h_m">%1$d ч %2$d мин</string>
     <string name="duration_h">%1$d ч</string>
     <string name="duration_m">%1$d мин</string>
+    <string name="settings_glass_style_title">Стекло нижней панели</string>
+    <string name="glass_style_prismal">Жидкое стекло Prismal</string>
+    <string name="glass_style_ksu">Жидкое стекло KSU</string>
+    <string name="glass_style_off">Выкл</string>
 </resources>

@@ -177,4 +177,8 @@
     <string name="duration_h_m">%1$d小時%2$d分鐘</string>
     <string name="duration_h">%1$d小時</string>
     <string name="duration_m">%1$d分鐘</string>
+    <string name="settings_glass_style_title">底欄玻璃效果</string>
+    <string name="glass_style_prismal">Prismal 液態玻璃</string>
+    <string name="glass_style_ksu">KSU 液態玻璃</string>
+    <string name="glass_style_off">關閉</string>
 </resources>

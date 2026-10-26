@@ -1,5 +1,5 @@
 {
-  "versionCode": 36,
-  "versionName": "1.15.1",
-  "changelog": "1. 修复时长文案未翻译的问题（如「1小时30分钟」→ \"1 h 30 min\"）\n2. 语言切换黑屏闪烁减轻"
+  "versionCode": 37,
+  "versionName": "1.16.0",
+  "changelog": "1. 移植 KernelSU 液态玻璃底栏（参数完全一致：vibrancy 1.5 / blur 4dp / lens 24dp 折射 / 色散 0.5）\n2. 设置 → 外观 → 底栏玻璃效果：Prismal / KSU 两种效果自由切换对比\n3. Android 12 以下自动回退 Prismal 磨砂降级"
 }

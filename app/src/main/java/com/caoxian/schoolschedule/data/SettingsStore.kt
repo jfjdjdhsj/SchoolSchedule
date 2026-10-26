@@ -148,5 +148,6 @@ class SettingsStore(context: Context) {
         const val GLASS_ENGINE_PRISMAL = "prismal"
         const val GLASS_ENGINE_MIUI = "miui"
         const val GLASS_ENGINE_OFF = "off"
+        const val GLASS_ENGINE_KSU = "ksu"
     }
 }

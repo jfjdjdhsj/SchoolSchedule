@@ -78,8 +78,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
  *
  * @param update 应用内更新控制器（与首页共用，弹窗在首页层级渲染）
  * @param onCheckUpdate 手动触发检测更新（Toast / 弹窗提示结果）
- * @param glassEnabled 底栏液态玻璃开关状态
- * @param onGlassToggle 开关回调
+ * @param glassEngine 底栏玻璃引擎："prismal" / "ksu" / "off"
+ * @param onGlassEngineChange 引擎切换回调
  * @param showAllRound 是否显示「全部」轮次视图
  * @param onShowAllRoundToggle 开关回调
  * @param bottomPadding 底部避让（底栏高度）
@@ -87,8 +87,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun SettingsScreen(
     settings: SettingsStore,
-    glassEnabled: Boolean,
-    onGlassToggle: (Boolean) -> Unit,
+    glassEngine: String,
+    onGlassEngineChange: (String) -> Unit,
     showAllRound: Boolean,
     onShowAllRoundToggle: (Boolean) -> Unit,
     themeMode: String,
@@ -118,6 +118,7 @@ fun SettingsScreen(
     var showLogDialog by remember { mutableStateOf(false) }
     var showOssDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showGlassDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -131,14 +132,18 @@ fun SettingsScreen(
                 text = stringResource(R.string.settings_group_appearance),
                 insideMargin = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 8.dp),
             )
-            // 底栏液态玻璃开关
+            // 底栏玻璃效果：Prismal / KSU / 关闭（可切换对比两种液态玻璃）
             Card(modifier = Modifier.fillMaxWidth()) {
-                SettingRow(
+                SelectRow(
                     icon = MiuixIcons.Theme,
                     title = stringResource(R.string.settings_glass_title),
                     summary = stringResource(R.string.settings_glass_summary),
-                    checked = glassEnabled,
-                    onToggle = onGlassToggle,
+                    value = when (glassEngine) {
+                        SettingsStore.GLASS_ENGINE_KSU -> stringResource(R.string.glass_style_ksu)
+                        SettingsStore.GLASS_ENGINE_OFF -> stringResource(R.string.glass_style_off)
+                        else -> stringResource(R.string.glass_style_prismal)
+                    },
+                    onClick = { showGlassDialog = true },
                 )
             }
             // 主题模式
@@ -450,6 +455,24 @@ fun SettingsScreen(
     // 更新日志弹窗（聚合 GitHub Releases，离线时回退本地缓存）
     if (showLogDialog) {
         UpdateLogDialog(update = update, onDismiss = { showLogDialog = false })
+    }
+
+    // 底栏玻璃效果弹窗：两种液态玻璃实现 + 关闭
+    if (showGlassDialog) {
+        OptionDialog(
+            title = stringResource(R.string.settings_glass_title),
+            selected = glassEngine,
+            options = listOf(
+                Option(SettingsStore.GLASS_ENGINE_PRISMAL, stringResource(R.string.glass_style_prismal), null),
+                Option(SettingsStore.GLASS_ENGINE_KSU, stringResource(R.string.glass_style_ksu), null),
+                Option(SettingsStore.GLASS_ENGINE_OFF, stringResource(R.string.glass_style_off), null),
+            ),
+            onSelect = {
+                onGlassEngineChange(it)
+                showGlassDialog = false
+            },
+            onDismiss = { showGlassDialog = false },
+        )
     }
 
     // 主题模式弹窗

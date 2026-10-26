@@ -154,4 +154,8 @@
     <string name="duration_h_m">%1$d時間%2$d分</string>
     <string name="duration_h">%1$d時間</string>
     <string name="duration_m">%1$d分</string>
+    <string name="settings_glass_style_title">ボトムバーのガラス</string>
+    <string name="glass_style_prismal">Prismal リキッドグラス</string>
+    <string name="glass_style_ksu">KSU リキッドグラス</string>
+    <string name="glass_style_off">オフ</string>
 </resources>

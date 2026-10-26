@@ -2,6 +2,8 @@ package com.caoxian.schoolschedule.ui
 
 import android.view.HapticFeedbackConstants
 import android.content.Context
+import android.os.Build
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
@@ -64,6 +67,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.caoxian.schoolschedule.MainActivity
+import com.caoxian.schoolschedule.ui.component.FloatingBottomBar
+import com.caoxian.schoolschedule.ui.component.FloatingBottomBarItem
 import com.caoxian.schoolschedule.R
 import com.caoxian.schoolschedule.data.BreakPeriod
 import com.caoxian.schoolschedule.data.label
@@ -90,6 +95,9 @@ import com.styropyr0.prismal.effects.applyPrismalGlassEffects
 import com.styropyr0.prismal.effects.rememberPrismalAdaptiveLuminance
 import com.styropyr0.prismal.shapes.PrismalCapsule
 import com.styropyr0.prismal.specular.PrismalSpecular
+import top.yukonga.miuix.kmp.blur.Backdrop
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import com.styropyr0.prismal.sources.PrismalGlassLayer
 import com.styropyr0.prismal.sources.prismalGlassLayer
 import com.styropyr0.prismal.sources.rememberPrismalGlassLayer
@@ -109,6 +117,7 @@ import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** 底栏区域高度（含上下留白），内容区底部避让用 */
@@ -188,6 +197,8 @@ fun ScheduleScreen(
 
     // 玻璃采样源：内容层（首页时间轴 / 设置页）绘制于此层，供底栏玻璃与定位按钮采样
     val backdrop = rememberPrismalGlassLayer()
+    // KSU 风格底栏的内容采样源（miuix-blur layerBackdrop）
+    val ksuBackdrop = rememberLayerBackdrop()
     // 应用内主题强制深浅时，同步状态栏图标颜色（浅色 / 深色 / 跟随系统）
     LaunchedEffect(themeMode) {
         (context as? MainActivity)?.applySystemBarStyle(
@@ -301,7 +312,14 @@ fun ScheduleScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .prismalGlassLayer(backdrop),
+                    .prismalGlassLayer(backdrop)
+                    .then(
+                        if (glassEngine == "ksu") {
+                            Modifier.layerBackdrop(ksuBackdrop)
+                        } else {
+                            Modifier
+                        },
+                    ),
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -372,10 +390,10 @@ fun ScheduleScreen(
                     } else {
                         SettingsScreen(
                             settings = settings,
-                            glassEnabled = glassEngine != "off",
-                            onGlassToggle = {
-                                glassEngine = if (it) "prismal" else "off"
-                                settings.glassEngine = glassEngine
+                            glassEngine = glassEngine,
+                            onGlassEngineChange = {
+                                glassEngine = it
+                                settings.glassEngine = it
                             },
                             showAllRound = showAllRound,
                             onShowAllRoundToggle = {
@@ -457,8 +475,10 @@ fun ScheduleScreen(
             BottomBar(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
-                glassEnabled = glassEngine != "off",
+                glassEngine = glassEngine,
+                themeMode = themeMode,
                 backdrop = backdrop,
+                ksuBackdrop = ksuBackdrop,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
 
@@ -506,12 +526,25 @@ fun ScheduleScreen(
 private fun BottomBar(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    glassEnabled: Boolean,
+    glassEngine: String,
+    themeMode: String,
     backdrop: PrismalGlassLayer,
+    ksuBackdrop: Backdrop,
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MiuixTheme.colorScheme
-    if (glassEnabled) {
+    // miuix-blur 的 AGSL / RenderEffect 需要 API 31+（完整效果 33+）；低版本回退 Prismal 磨砂降级
+    val ksuAvailable = glassEngine == "ksu" && Build.VERSION.SDK_INT >= 31
+    if (ksuAvailable) {
+        KsuGlassBottomBar(
+            selectedTab = selectedTab,
+            onTabSelected = onTabSelected,
+            backdrop = ksuBackdrop,
+            themeMode = themeMode,
+            modifier = modifier,
+        )
+    } else if (glassEngine != "off") {
+        // Prismal 液态玻璃；KSU 在低版本不可用时也回退到 Prismal 磨砂降级
         GlassBottomBar(
             selectedTab = selectedTab,
             onTabSelected = onTabSelected,
@@ -520,6 +553,65 @@ private fun BottomBar(
         )
     } else {
         ClassicBottomBarContent(selectedTab, onTabSelected, modifier)
+    }
+}
+
+/**
+ * KSU 风格液态玻璃底栏：完整移植自 KernelSU Manager 的 FloatingBottomBar，
+ * 效果参数与 KSU 完全一致（vibrancy 饱和度 1.5 → blur 4dp×4dp → lens 折射 24dp/24dp →
+ * 40% 半透明底色；选中指示器二次折射 + 色散 0.5 + 内阴影，随按压进度增强）。
+ */
+@Composable
+private fun KsuGlassBottomBar(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    backdrop: Backdrop,
+    themeMode: String,
+    modifier: Modifier = Modifier,
+) {
+    val configuration = LocalConfiguration.current
+    val systemDark = (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+        Configuration.UI_MODE_NIGHT_YES
+    val isDark = when (themeMode) {
+        SettingsStore.THEME_MODE_LIGHT -> false
+        SettingsStore.THEME_MODE_DARK -> true
+        else -> systemDark
+    }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(bottom = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        FloatingBottomBar(
+            modifier = Modifier,
+            selectedIndex = selectedTab,
+            onSelected = onTabSelected,
+            backdrop = backdrop,
+            tabsCount = 2,
+            isDark = isDark,
+        ) { activateTab ->
+            FloatingBottomBarItem(selected = selectedTab == 0, onClick = { activateTab(0) }) {
+                KsuTabContent(selected = selectedTab == 0, icon = HomeIcon, label = stringResource(R.string.nav_home))
+            }
+            FloatingBottomBarItem(selected = selectedTab == 1, onClick = { activateTab(1) }) {
+                KsuTabContent(selected = selectedTab == 1, icon = SettingsIcon, label = stringResource(R.string.nav_settings))
+            }
+        }
+    }
+}
+
+/** KSU 底栏标签内容：图标 + 文字（颜色跟随 LocalContentColor，选中态由指示器胶囊呈现） */
+@Composable
+private fun KsuTabContent(selected: Boolean, icon: ImageVector, label: String) {
+    val color = LocalContentColor.current
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
+    ) {
+        Icon(imageVector = icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
+        Text(text = label, color = color, fontSize = 11.sp, maxLines = 1)
     }
 }
 
