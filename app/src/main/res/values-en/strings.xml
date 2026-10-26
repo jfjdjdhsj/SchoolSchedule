@@ -181,4 +181,6 @@
     <string name="glass_style_prismal">Prismal Liquid Glass</string>
     <string name="glass_style_ksu">KSU Liquid Glass</string>
     <string name="glass_style_off">Off</string>
+    <string name="settings_haptics_title">Haptic Feedback</string>
+    <string name="settings_haptics_summary">Vibration when dragging or switching bottom bar items</string>
 </resources>

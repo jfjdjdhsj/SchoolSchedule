@@ -156,6 +156,7 @@ fun ScheduleScreen(
     var privacyAnswered by remember { mutableStateOf(settings.privacyAnswered) }
     // 底栏玻璃引擎："prismal" / "miui" / "off"（设置页可切换）
     var glassEngine by remember { mutableStateOf(settings.glassEngine) }
+    var hapticsEnabled by remember { mutableStateOf(settings.hapticFeedbackEnabled) }
     val colorScheme = MiuixTheme.colorScheme
     val density = LocalDensity.current
     val context = LocalContext.current
@@ -417,6 +418,11 @@ fun ScheduleScreen(
                                 glassEngine = it
                                 settings.glassEngine = it
                             },
+                            hapticsEnabled = hapticsEnabled,
+                            onHapticsChange = {
+                                hapticsEnabled = it
+                                settings.hapticFeedbackEnabled = it
+                            },
                             showAllRound = showAllRound,
                             onShowAllRoundToggle = {
                                 showAllRound = it
@@ -499,6 +505,7 @@ fun ScheduleScreen(
                 onTabSelected = { selectedTab = it },
                 glassEngine = glassEngine,
                 themeMode = themeMode,
+                hapticsEnabled = hapticsEnabled,
                 backdrop = backdrop,
                 ksuBackdrop = ksuBackdrop,
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -550,6 +557,7 @@ private fun BottomBar(
     onTabSelected: (Int) -> Unit,
     glassEngine: String,
     themeMode: String,
+    hapticsEnabled: Boolean,
     backdrop: PrismalGlassLayer,
     ksuBackdrop: Backdrop,
     modifier: Modifier = Modifier,
@@ -563,6 +571,7 @@ private fun BottomBar(
             onTabSelected = onTabSelected,
             backdrop = ksuBackdrop,
             themeMode = themeMode,
+            hapticsEnabled = hapticsEnabled,
             modifier = modifier,
         )
     } else if (glassEngine != "off") {
@@ -571,6 +580,7 @@ private fun BottomBar(
             selectedTab = selectedTab,
             onTabSelected = onTabSelected,
             backdrop = backdrop,
+            hapticsEnabled = hapticsEnabled,
             modifier = modifier,
         )
     } else {
@@ -589,6 +599,7 @@ private fun KsuGlassBottomBar(
     onTabSelected: (Int) -> Unit,
     backdrop: Backdrop,
     themeMode: String,
+    hapticsEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val configuration = LocalConfiguration.current
@@ -616,6 +627,7 @@ private fun KsuGlassBottomBar(
             tabsCount = 2,
             isDark = isDark,
             expandWidth = true,
+            hapticsEnabled = hapticsEnabled,
         ) { activateTab ->
             FloatingBottomBarItem(selected = selectedTab == 0, onClick = { activateTab(0) }) {
                 KsuTabContent(selected = selectedTab == 0, icon = HomeIcon, label = stringResource(R.string.nav_home))
@@ -723,6 +735,7 @@ private fun GlassBottomBar(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     backdrop: PrismalGlassLayer,
+    hapticsEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
@@ -846,7 +859,7 @@ private fun GlassBottomBar(
                                     // 水平拖动成立：全量增压 + 触觉提示
                                     dragging = true
                                     gestureScope.launch { glassBoost.animateTo(1f, boostSpring) }
-                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                    if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                                 } else if (abs(totalDy) > slop) {
                                     // 垂直手势：不接管
                                     break
@@ -859,7 +872,7 @@ private fun GlassBottomBar(
                                 if (index != lastIndex) {
                                     lastIndex = index
                                     onTabSelected(index)
-                                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                    if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                                 }
                                 change.consume()
                             }
@@ -869,10 +882,10 @@ private fun GlassBottomBar(
                             // 短按（含长按不动后抬起）：按落点所在菜单切换
                             val index = (lastX / tabWidth).toInt().coerceIn(0, tabsCount - 1)
                             onTabSelected(index)
-                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         } else {
                             // 拖动结束：确认触觉
-                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         }
                         gestureScope.launch { glassBoost.animateTo(0f, boostSpring) }
                     }

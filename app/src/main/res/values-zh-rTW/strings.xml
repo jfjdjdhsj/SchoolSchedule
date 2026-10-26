@@ -181,4 +181,6 @@
     <string name="glass_style_prismal">Prismal 液態玻璃</string>
     <string name="glass_style_ksu">KSU 液態玻璃</string>
     <string name="glass_style_off">關閉</string>
+    <string name="settings_haptics_title">震動回饋</string>
+    <string name="settings_haptics_summary">底欄拖動、切換選單時的觸覺回饋</string>
 </resources>

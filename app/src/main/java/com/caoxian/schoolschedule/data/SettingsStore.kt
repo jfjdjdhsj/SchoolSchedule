@@ -111,6 +111,15 @@ class SettingsStore(context: Context) {
         }
 
     /**
+     * 触觉反馈：底栏拖动 / 切换菜单时的震动（可关）。
+     */
+    var hapticFeedbackEnabled: Boolean
+        get() = prefs.getBoolean(KEY_HAPTICS, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_HAPTICS, value).apply()
+        }
+
+    /**
      * 应用语言（仅 Android 13 以下生效；13+ 由系统「应用语言」设置接管）。
      * "system"（跟随系统，默认）/ "zh-CN" / "en" / "zh-TW"。
      */
@@ -132,6 +141,7 @@ class SettingsStore(context: Context) {
         const val KEY_THEME_COLOR = "theme_color"
         const val KEY_GLASS_ENGINE = "glass_engine"
         const val KEY_APP_LANGUAGE = "app_language"
+        const val KEY_HAPTICS = "haptic_feedback_enabled"
 
         /** 应用语言取值：跟随系统 / 简体中文 / English / 繁體中文 */
         const val LANG_SYSTEM = "system"

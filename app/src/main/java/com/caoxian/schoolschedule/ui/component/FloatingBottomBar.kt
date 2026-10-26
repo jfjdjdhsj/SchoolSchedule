@@ -51,7 +51,9 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
+import android.view.HapticFeedbackConstants
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -212,6 +214,7 @@ fun FloatingBottomBar(
     isDark: Boolean,
     isBlurEnabled: Boolean = true,
     expandWidth: Boolean = false,
+    hapticsEnabled: Boolean = true,
     content: @Composable RowScope.((Int) -> Unit) -> Unit
 ) {
     val isInDark = isDark
@@ -223,6 +226,7 @@ fun FloatingBottomBar(
 
     val tabsBackdrop = rememberLayerBackdrop()
     val density = LocalDensity.current
+    val view = LocalView.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
 
@@ -254,6 +258,20 @@ fun FloatingBottomBar(
             .coerceIn(0, tabsCount - 1)
     }
 
+
+    /**
+     * 拖动经过菜单时实时切换页面（与 Prismal 模式一致的体验）：
+     * 指示器越过菜单中线即触发 onSelected + 轻触觉反馈。
+     */
+    fun switchIfCrossed(index: Int) {
+        val target = index.coerceIn(0, tabsCount - 1)
+        if (currentIndex != target) {
+            currentIndex = target
+            onSelectedUpdated(target)
+            if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+    }
+
     val dampedDragAnimation = remember(animationScope, tabsCount, density, isLtr) {
         DampedDragAnimation(
             animationScope = animationScope,
@@ -267,6 +285,7 @@ fun FloatingBottomBar(
             },
             onDragStarted = { position ->
                 updateValue(indexAt(position.x).toFloat())
+                switchIfCrossed(indexAt(position.x))
             },
             onDragStopped = {
                 val targetIndex = targetValue.roundToInt().coerceIn(0, tabsCount - 1)
@@ -294,6 +313,8 @@ fun FloatingBottomBar(
                     animationScope.launch {
                         offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
                     }
+                    // 拖到哪个菜单下面就实时跳转哪个界面
+                    switchIfCrossed(targetValue.roundToInt())
                 }
             }
         )
@@ -305,6 +326,7 @@ fun FloatingBottomBar(
             dampedDragAnimation.animateToValue(selectedIndex.toFloat())
         }
     }
+
 
     fun activateTab(index: Int) {
         if (index !in 0 until tabsCount) return

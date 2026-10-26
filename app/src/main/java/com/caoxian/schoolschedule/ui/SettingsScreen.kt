@@ -89,6 +89,8 @@ fun SettingsScreen(
     settings: SettingsStore,
     glassEngine: String,
     onGlassEngineChange: (String) -> Unit,
+    hapticsEnabled: Boolean,
+    onHapticsChange: (Boolean) -> Unit,
     showAllRound: Boolean,
     onShowAllRoundToggle: (Boolean) -> Unit,
     themeMode: String,
@@ -202,6 +204,16 @@ fun SettingsScreen(
                     summary = stringResource(R.string.settings_show_all_round_summary),
                     checked = showAllRound,
                     onToggle = onShowAllRoundToggle,
+                )
+            }
+            // 震动反馈：底栏拖动 / 切换菜单时的触觉反馈开关
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                SettingRow(
+                    icon = MiuixIcons.Edit,
+                    title = stringResource(R.string.settings_haptics_title),
+                    summary = stringResource(R.string.settings_haptics_summary),
+                    checked = hapticsEnabled,
+                    onToggle = onHapticsChange,
                 )
             }
 
