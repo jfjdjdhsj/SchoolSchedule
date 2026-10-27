@@ -60,6 +60,10 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Alarm
+import top.yukonga.miuix.kmp.icon.extended.Layers
+import top.yukonga.miuix.kmp.icon.extended.Messages
+import top.yukonga.miuix.kmp.icon.extended.Translate
 import top.yukonga.miuix.kmp.icon.extended.Album
 import top.yukonga.miuix.kmp.icon.extended.Community
 import top.yukonga.miuix.kmp.icon.extended.Edit
@@ -91,9 +95,8 @@ fun SettingsScreen(
     onGlassEngineChange: (String) -> Unit,
     hapticsEnabled: Boolean,
     onHapticsChange: (Boolean) -> Unit,
-    mirrorMode: String,
-    onMirrorModeChange: (String) -> Unit,
-    onAutoSpeedTest: (onResult: (String?, Map<String, Long>) -> Unit) -> Unit,
+    cdnAccelerated: Boolean,
+    onCdnChange: (Boolean) -> Unit,
     notificationEnabled: Boolean,
     onNotificationChange: (Boolean) -> Unit,
     showAllRound: Boolean,
@@ -126,9 +129,6 @@ fun SettingsScreen(
     var showOssDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showGlassDialog by remember { mutableStateOf(false) }
-    var showMirrorDialog by remember { mutableStateOf(false) }
-    var mirrorLatencies by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
-    var mirrorTesting by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -145,7 +145,7 @@ fun SettingsScreen(
             // 底栏玻璃效果：Prismal / KSU / 关闭（可切换对比两种液态玻璃）
             Card(modifier = Modifier.fillMaxWidth()) {
                 SelectRow(
-                    icon = MiuixIcons.Theme,
+                    icon = MiuixIcons.Layers,
                     title = stringResource(R.string.settings_glass_title),
                     summary = stringResource(R.string.settings_glass_summary),
                     value = when (glassEngine) {
@@ -173,7 +173,7 @@ fun SettingsScreen(
             // 主题色（Monet 动态取色）
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 SelectRow(
-                    icon = MiuixIcons.Album,
+                    icon = MiuixIcons.Translate,
                     title = stringResource(R.string.settings_theme_color_title),
                     summary = stringResource(R.string.settings_theme_color_summary),
                     value = ThemeColorPresets.firstOrNull { (name, hex) ->
@@ -217,7 +217,7 @@ fun SettingsScreen(
             // 常驻状态通知：上课期间静默，其他时间提醒
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 SettingRow(
-                    icon = MiuixIcons.Show,
+                    icon = MiuixIcons.Messages,
                     title = stringResource(R.string.settings_notification_title),
                     summary = stringResource(R.string.settings_notification_summary),
                     checked = notificationEnabled,
@@ -240,7 +240,7 @@ fun SettingsScreen(
             // 震动反馈：底栏拖动 / 切换菜单时的触觉反馈开关
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 SettingRow(
-                    icon = MiuixIcons.Edit,
+                    icon = MiuixIcons.Alarm,
                     title = stringResource(R.string.settings_haptics_title),
                     summary = stringResource(R.string.settings_haptics_summary),
                     checked = hapticsEnabled,
@@ -287,14 +287,17 @@ fun SettingsScreen(
                     },
                 )
             }
-            // 镜像源：自动测速选最快，或手动指定
+            // 加速源：gh-proxy.com（默认开） / GitHub 官方直连
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                SelectRow(
+                SettingRow(
                     icon = MiuixIcons.Refresh,
-                    title = stringResource(R.string.settings_mirror_title),
-                    summary = stringResource(R.string.settings_mirror_summary),
-                    value = mirrorValueText(settings, mirrorMode),
-                    onClick = { showMirrorDialog = true },
+                    title = stringResource(R.string.settings_cdn_title),
+                    summary = stringResource(R.string.settings_cdn_summary),
+                    checked = cdnAccelerated,
+                    onToggle = {
+                        settings.cdnAccelerated = it
+                        onCdnChange(it)
+                    },
                 )
             }
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
@@ -528,40 +531,6 @@ fun SettingsScreen(
         )
     }
 
-    // 镜像源弹窗：自动测速选最快 / 手动指定
-    if (showMirrorDialog) {
-        MirrorDialog(
-            settings = settings,
-            mirrorMode = mirrorMode,
-            latencies = mirrorLatencies,
-            testing = mirrorTesting,
-            onAutoTest = {
-                mirrorTesting = true
-                onAutoSpeedTest { best, results ->
-                    mirrorLatencies = results
-                    mirrorTesting = false
-                    if (best != null) {
-                        onMirrorModeChange(com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_AUTO)
-                    }
-                    android.os.Handler(android.os.Looper.getMainLooper()).post {
-                        Toast.makeText(
-                            context,
-                            context.getString(
-                                if (best != null) R.string.mirror_auto_done else R.string.mirror_test_failed,
-                            ),
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                    }
-                }
-            },
-            onSelect = { id ->
-                onMirrorModeChange(id)
-                showMirrorDialog = false
-            },
-            onDismiss = { showMirrorDialog = false },
-        )
-    }
-
     // 主题模式弹窗
     if (showModeDialog) {
         OptionDialog(
@@ -721,23 +690,6 @@ private fun OssLibrariesDialog(onDismiss: () -> Unit) {
 }
 
 /** 选项弹窗条目：[value] 存储值、[label] 显示文本、[dot] 色点（主题色用）、[sub] 二级说明 */
-/** 镜像源选择行的当前值文本 */
-private fun mirrorValueText(settings: com.caoxian.schoolschedule.data.SettingsStore, mode: String): String =
-    when (mode) {
-        com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_JSDELIVR -> "jsDelivr CDN"
-        com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GITHUB -> "GitHub"
-        com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GHFAST -> "ghfast.top"
-        com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GHPROXY -> "gh-proxy.com"
-        else -> "自动：${
-            when (settings.mirrorSaved) {
-                com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GITHUB -> "GitHub"
-                com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GHFAST -> "ghfast.top"
-                com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GHPROXY -> "gh-proxy.com"
-                else -> "jsDelivr CDN"
-            }
-        }"
-    }
-
 private data class Option(
     val value: String,
     val label: String,
@@ -973,123 +925,6 @@ private fun FeedbackDialog(onDismiss: () -> Unit) {
 /**
  * 单选弹窗：列表选择，当前项带 ✓ 与主色高亮。
  */
-
-/**
- * 镜像源选择弹窗：顶部「自动测速并选择最快」，下面列出各镜像的延迟，
- * 点击任一镜像 = 手动指定。
- */
-@Composable
-private fun MirrorDialog(
-    settings: com.caoxian.schoolschedule.data.SettingsStore,
-    mirrorMode: String,
-    latencies: Map<String, Long>,
-    testing: Boolean,
-    onAutoTest: () -> Unit,
-    onSelect: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val colorScheme = MiuixTheme.colorScheme
-    val body: @Composable () -> Unit = {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-            // 自动测速
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = !testing, onClick = onAutoTest)
-                    .padding(horizontal = 8.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = if (testing) stringResource(R.string.mirror_testing) else stringResource(R.string.mirror_speed_test),
-                    color = colorScheme.primary,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            // 各镜像
-            com.caoxian.schoolschedule.util.UpdateConfig.MIRRORS.forEach { id ->
-                val label = when (id) {
-                    com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_JSDELIVR -> "jsDelivr CDN"
-                    com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GITHUB -> "GitHub"
-                    com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_GHFAST -> "ghfast.top"
-                    else -> "gh-proxy.com"
-                }
-                val ms = latencies[id] ?: settings.mirrorLatency(id).takeIf { it > 0 }?.toLong()
-                val latencyText = when {
-                    testing && latencies.isEmpty() -> stringResource(R.string.mirror_testing)
-                    ms == null -> "—"
-                    ms < 0 -> stringResource(R.string.mirror_timeout)
-                    else -> "${ms}ms"
-                }
-                val isSelected = mirrorMode == id
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelect(id) }
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = label, color = colorScheme.onSurface, fontSize = 15.sp)
-                        Text(
-                            text = latencyText,
-                            color = colorScheme.onSurfaceVariantSummary,
-                            fontSize = 11.sp,
-                        )
-                    }
-                    if (isSelected) {
-                        Text(
-                            text = "✓",
-                            color = colorScheme.primary,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-            }
-            // 自动模式行
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onSelect(com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_AUTO) }
-                    .padding(horizontal = 8.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.mirror_auto), color = colorScheme.onSurface, fontSize = 15.sp)
-                    Text(
-                        text = stringResource(R.string.mirror_auto_summary),
-                        color = colorScheme.onSurfaceVariantSummary,
-                        fontSize = 11.sp,
-                    )
-                }
-                if (mirrorMode == com.caoxian.schoolschedule.util.UpdateConfig.MIRROR_AUTO) {
-                    Text(
-                        text = "✓",
-                        color = colorScheme.primary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.padding(top = 10.dp))
-            TextButton(
-                text = stringResource(R.string.dialog_cancel),
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.padding(top = 4.dp))
-        }
-    }
-    OverlayDialog(
-        show = true,
-        title = stringResource(R.string.settings_mirror_title),
-        onDismissRequest = onDismiss,
-        content = body,
-    )
-}
 
 @Composable
 private fun OptionDialog(

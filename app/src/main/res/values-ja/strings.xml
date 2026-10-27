@@ -163,13 +163,6 @@
     <string name="settings_notification_title">ステータス通知</string>
     <string name="settings_notification_summary">通知バーに時間割の状態を表示。授業中は自動でサイレント、それ以外で通知</string>
     <string name="notification_channel_name">ステータス通知</string>
-    <string name="settings_mirror_title">ミラー選択</string>
-    <string name="settings_mirror_summary">更新確認と APK ダウンロードのミラー。自動測速で最速を選択、手動指定も可能</string>
-    <string name="mirror_speed_test">自動測速して最速を選択</string>
-    <string name="mirror_testing">測定中…</string>
-    <string name="mirror_auto_done">最速ミラーを保存しました。次回更新から適用</string>
-    <string name="mirror_test_failed">測速失敗、ネットワークを確認</string>
-    <string name="mirror_timeout">タイムアウト</string>
-    <string name="mirror_auto">自動（測速で最速）</string>
-    <string name="mirror_auto_summary">前回の測速で選ばれた最速ミラーを使用</string>
+    <string name="settings_cdn_title">CDN 高速化</string>
+    <string name="settings_cdn_summary">gh-proxy.com で更新の確認とダウンロードを高速化（オフ = GitHub 直接）</string>
 </resources>

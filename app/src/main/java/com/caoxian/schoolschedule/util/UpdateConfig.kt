@@ -24,57 +24,39 @@ object UpdateConfig {
     const val REPO_NAME = "SchoolSchedule"
     const val BRANCH = "main"
 
-    /** 镜像 ID */
-    const val MIRROR_AUTO = "auto"
-    const val MIRROR_JSDELIVR = "jsdelivr"
-    const val MIRROR_GITHUB = "github"
-    const val MIRROR_GHFAST = "ghfast"
-    const val MIRROR_GHPROXY = "ghproxy"
-
-    /** 可选镜像（测速 / 手动选择） */
-    val MIRRORS = listOf(MIRROR_JSDELIVR, MIRROR_GITHUB, MIRROR_GHFAST, MIRROR_GHPROXY)
-
     /** GitHub Releases API（检查更新 / 更新日志兜底） */
     const val RELEASES_API = "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
 
+    /** 加速源：gh-proxy.com（代理 GitHub raw 与 Releases 下载）；关闭时使用 GitHub 官方直连 */
+    private const val GHPROXY = "https://gh-proxy.com/"
     private const val GITHUB_RAW = "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/$BRANCH/"
     private const val GITHUB_DOWNLOAD =
         "https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/"
-    private const val JSDELIVR = "https://cdn.jsdelivr.net/gh/$REPO_OWNER/$REPO_NAME"
-    private const val GHFAST = "https://ghfast.top/"
-    private const val GHPROXY = "https://gh-proxy.com/"
 
+    /** Release 资产名（与 GitHub Release 资产一致） */
     fun apkAssetName(tag: String) = "SchoolSchedule-$tag-release.apk"
 
     /**
-     * 镜像的探测 / 检查地址（update.json）：同时用于测速与检查更新。
-     * 代理类镜像直接代理 GitHub raw。
+     * update.json 候选地址：加速开启 = gh-proxy 优先 + 官方 raw 兜底；关闭 = 仅官方。
      */
-    fun jsonProbeUrl(mirror: String): String = when (mirror) {
-        MIRROR_JSDELIVR -> "$JSDELIVR@$BRANCH/update.json"
-        MIRROR_GHFAST -> GHFAST + GITHUB_RAW + "update.json"
-        MIRROR_GHPROXY -> GHPROXY + GITHUB_RAW + "update.json"
-        else -> GITHUB_RAW + "update.json"
+    fun updateJsonUrls(accelerated: Boolean): List<String> {
+        val official = GITHUB_RAW + "update.json"
+        return if (accelerated) {
+            listOf(GHPROXY + official, official)
+        } else {
+            listOf(official)
+        }
     }
 
     /**
-     * update.json 候选地址：[primary] 优先，其余镜像按默认顺序兜底。
+     * APK 下载候选地址：加速开启 = gh-proxy 优先 + 官方直连兜底；关闭 = 仅官方。
      */
-    fun updateJsonUrls(primary: String): List<String> =
-        (listOf(primary) + MIRRORS).distinct().map { jsonProbeUrl(it) }
-
-    /**
-     * APK 下载候选地址：[primary] 优先，其余镜像兜底（jsDelivr 按发布标签分发，
-     * 代理类镜像代理 GitHub Releases 直连地址）。
-     */
-    fun releaseDownloadUrls(tag: String, primary: String): List<String> {
+    fun releaseDownloadUrls(tag: String, accelerated: Boolean): List<String> {
         val official = GITHUB_DOWNLOAD + "$tag/" + apkAssetName(tag)
-        val byMirror = mapOf(
-            MIRROR_JSDELIVR to "$JSDELIVR@$tag/" + apkAssetName(tag),
-            MIRROR_GITHUB to official,
-            MIRROR_GHFAST to GHFAST + official,
-            MIRROR_GHPROXY to GHPROXY + official,
-        )
-        return (listOf(primary) + MIRRORS).distinct().mapNotNull { byMirror[it] }
+        return if (accelerated) {
+            listOf(GHPROXY + official, official)
+        } else {
+            listOf(official)
+        }
     }
 }

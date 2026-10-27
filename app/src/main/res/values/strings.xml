@@ -186,13 +186,6 @@
     <string name="settings_notification_title">常驻状态通知</string>
     <string name="settings_notification_summary">通知栏显示当前作息状态；上课期间自动静默，课间与其他时间提醒</string>
     <string name="notification_channel_name">常驻状态通知</string>
-    <string name="settings_mirror_title">镜像源</string>
-    <string name="settings_mirror_summary">更新检查与 APK 下载使用的镜像；自动测速选延迟最低的保存，也可手动指定</string>
-    <string name="mirror_speed_test">自动测速并选择最快</string>
-    <string name="mirror_testing">测速中…</string>
-    <string name="mirror_auto_done">已选择最快镜像，下次更新生效</string>
-    <string name="mirror_test_failed">测速失败，请检查网络</string>
-    <string name="mirror_timeout">超时</string>
-    <string name="mirror_auto">自动（测速选最快）</string>
-    <string name="mirror_auto_summary">使用上次测速选出的最快镜像</string>
+    <string name="settings_cdn_title">加速源</string>
+    <string name="settings_cdn_summary">开启使用 gh-proxy.com 加速更新检查与下载；关闭使用 GitHub 官方直连</string>
 </resources>

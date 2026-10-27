@@ -125,29 +125,13 @@ class SettingsStore(context: Context) {
         }
 
     /**
-     * 镜像源模式："auto"（自动测速选最快）或具体镜像 ID（手动指定）。
+     * 加速源：开启使用 gh-proxy.com 加速更新检查与下载（默认），关闭使用 GitHub 官方直连。
      */
-    var mirrorMode: String
-        get() = prefs.getString(KEY_MIRROR_MODE, null) ?: "auto"
+    var cdnAccelerated: Boolean
+        get() = prefs.getBoolean(KEY_CDN, true)
         set(value) {
-            prefs.edit().putString(KEY_MIRROR_MODE, value).apply()
+            prefs.edit().putBoolean(KEY_CDN, value).apply()
         }
-
-    /**
-     * 自动测速选出的最快镜像（auto 模式下实际生效的源）。
-     */
-    var mirrorSaved: String
-        get() = prefs.getString(KEY_MIRROR_SAVED, null) ?: "jsdelivr"
-        set(value) {
-            prefs.edit().putString(KEY_MIRROR_SAVED, value).apply()
-        }
-
-    /** 镜像延迟（ms，-1 = 未知 / 超时），用于测速结果展示 */
-    fun mirrorLatency(id: String): Int = prefs.getInt("mirror_ms_$id", -1)
-
-    fun setMirrorLatency(id: String, ms: Int) {
-        prefs.edit().putInt("mirror_ms_$id", ms).apply()
-    }
 
     /**
      * 触觉反馈：底栏拖动 / 切换菜单时的震动（可关）。
@@ -181,8 +165,7 @@ class SettingsStore(context: Context) {
         const val KEY_GLASS_ENGINE = "glass_engine"
         const val KEY_APP_LANGUAGE = "app_language"
         const val KEY_HAPTICS = "haptic_feedback_enabled"
-        const val KEY_MIRROR_MODE = "mirror_mode"
-        const val KEY_MIRROR_SAVED = "mirror_saved"
+        const val KEY_CDN = "accelerated_source"
         const val KEY_NOTIFICATION = "status_notification"
 
         /** 应用语言取值：跟随系统 / 简体中文 / English / 繁體中文 */

@@ -163,13 +163,6 @@
     <string name="settings_notification_title">Постоянное уведомление</string>
     <string name="settings_notification_summary">Статус расписания в шторке; тихо во время занятий, напоминания в остальное время</string>
     <string name="notification_channel_name">Постоянное уведомление</string>
-    <string name="settings_mirror_title">Зеркало</string>
-    <string name="settings_mirror_summary">Зеркало для проверки обновлений и загрузки APK; автотест выбирает самое быстрое, или вручную</string>
-    <string name="mirror_speed_test">Тест скорости и выбрать быстрейшее</string>
-    <string name="mirror_testing">Измерение…</string>
-    <string name="mirror_auto_done">Быстрейшее зеркало сохранено; применится к следующему обновлению</string>
-    <string name="mirror_test_failed">Тест не пройден, проверьте сеть</string>
-    <string name="mirror_timeout">Тайм-аут</string>
-    <string name="mirror_auto">Авто (по тесту)</string>
-    <string name="mirror_auto_summary">Использует самое быстрое зеркало из последнего теста</string>
+    <string name="settings_cdn_title">CDN-ускорение</string>
+    <string name="settings_cdn_summary">gh-proxy.com для проверки и загрузки обновлений; выкл = GitHub напрямую</string>
 </resources>

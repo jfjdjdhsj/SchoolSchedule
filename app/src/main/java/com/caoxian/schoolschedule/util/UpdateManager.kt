@@ -37,8 +37,8 @@ data class UpdateInfo(
     /**
      * APK 下载候选地址：首选镜像优先，其余镜像兜底；Release 资产地址最后兜底。
      */
-    fun apkUrls(primaryMirror: String): List<String> =
-        UpdateConfig.releaseDownloadUrls("v$versionName", primaryMirror) +
+    fun apkUrls(accelerated: Boolean): List<String> =
+        UpdateConfig.releaseDownloadUrls("v$versionName", accelerated) +
             listOfNotNull(assetUrl)
 }
 
@@ -116,35 +116,15 @@ class UpdateController(private val context: Context) {
      * 检查更新。
      * @param silent 静默模式（进入应用自动检测）：无新版本 / 失败时不改变状态、不提示
      */
-    /** 实际生效的镜像：auto = 上次测速选出的最快源；否则为手动指定的镜像 */
-    private fun effectiveMirror(): String {
-        val s = SettingsStore(context)
-        return if (s.mirrorMode == UpdateConfig.MIRROR_AUTO) s.mirrorSaved else s.mirrorMode
-    }
-
-    /**
-     * 全镜像测速：并发请求各镜像 update.json，保存延迟并选出最快源。
-     *
-     * @return (最快镜像 ID, 各镜像延迟 ms)
-     */
-    suspend fun runSpeedTest(): Pair<String, Map<String, Long>> = withContext(Dispatchers.IO) {
-        val results = UpdateConfig.MIRRORS.map { id ->
-            async { id to UpdateChecker.testMirror(id) }
-        }.awaitAll().toMap()
-        val settings = SettingsStore(context)
-        results.forEach { (id, ms) -> settings.setMirrorLatency(id, ms.toInt()) }
-        val best = results.filterValues { it > 0 }.minByOrNull { it.value }?.key
-            ?: UpdateConfig.MIRROR_JSDELIVR
-        settings.mirrorSaved = best
-        best to results
-    }
+    /** 加速源开关：开启走 gh-proxy.com，关闭 GitHub 官方直连 */
+    private fun accelerated(): Boolean = SettingsStore(context).cdnAccelerated
 
     fun check(silent: Boolean) {
         if (state is UpdateState.Checking || state is UpdateState.Downloading) return
         state = UpdateState.Checking
         scope.launch {
             try {
-                val info = UpdateChecker.check(effectiveMirror())
+                val info = UpdateChecker.check(accelerated())
                 if (isNewest(info)) {
                     if (!silent) state = UpdateState.Latest
                     else state = UpdateState.Idle
@@ -167,7 +147,7 @@ class UpdateController(private val context: Context) {
                 val dir = File(context.getExternalFilesDir("update") ?: File(context.filesDir, "update"), "")
                 dir.mkdirs()
                 val target = File(dir, "SchoolSchedule-${info.versionName}.apk")
-                UpdateChecker.downloadApk(info, target, effectiveMirror()) { progress ->
+                UpdateChecker.downloadApk(info, target, accelerated()) { progress ->
                     state = UpdateState.Downloading(progress)
                 }
                 state = UpdateState.ReadyToInstall(target)
@@ -225,45 +205,23 @@ object UpdateChecker {
      * 检查更新：优先 GitHub Releases API（含更新日志与 APK 资产地址）；
      * API 不可达时回退 update.json（jsDelivr → GitHub 直连）。全部失败抛异常。
      */
-    suspend fun check(primaryMirror: String): UpdateInfo = withContext(Dispatchers.IO) {
-        // 镜像源优先（国内可达性最好），GitHub Releases API 兜底
+    suspend fun check(accelerated: Boolean): UpdateInfo = withContext(Dispatchers.IO) {
+        // 加速源优先（国内可达性最好），GitHub Releases API 兜底
         try {
-            return@withContext checkViaUpdateJson(primaryMirror)
+            return@withContext checkViaUpdateJson(accelerated)
         } catch (_: Exception) {
         }
         try {
             return@withContext checkViaReleasesApi()
         } catch (_: Exception) {
         }
-        return@withContext checkViaUpdateJson(UpdateConfig.MIRROR_GITHUB)
-    }
-
-    /**
-     * 镜像测速：TCP 连接测速（等效 ping，一个网络往返），2 秒超时。
-     * 失败 / 超时返回 -1。
-     */
-    suspend fun testMirror(mirror: String): Long = withContext(Dispatchers.IO) {
-        val host = when (mirror) {
-            UpdateConfig.MIRROR_JSDELIVR -> "cdn.jsdelivr.net"
-            UpdateConfig.MIRROR_GHFAST -> "ghfast.top"
-            UpdateConfig.MIRROR_GHPROXY -> "gh-proxy.com"
-            else -> "raw.githubusercontent.com"
-        }
-        val start = System.currentTimeMillis()
-        try {
-            java.net.Socket().use { socket ->
-                socket.connect(java.net.InetSocketAddress(host, 443), 2000)
-                System.currentTimeMillis() - start
-            }
-        } catch (_: Exception) {
-            -1
-        }
+        return@withContext checkViaUpdateJson(accelerated = false)
     }
 
     /** update.json 检查：按候选地址顺序尝试（加速源开 = jsDelivr → raw；关 = raw） */
-    private suspend fun checkViaUpdateJson(primaryMirror: String): UpdateInfo = withContext(Dispatchers.IO) {
+    private suspend fun checkViaUpdateJson(accelerated: Boolean): UpdateInfo = withContext(Dispatchers.IO) {
         var lastError: Exception? = null
-        for (url in UpdateConfig.updateJsonUrls(primaryMirror)) {
+        for (url in UpdateConfig.updateJsonUrls(accelerated)) {
             try {
                 val body = httpGet(url) ?: continue
                 val json = JSONObject(body)
@@ -319,11 +277,11 @@ object UpdateChecker {
     suspend fun downloadApk(
         info: UpdateInfo,
         target: File,
-        primaryMirror: String,
+        accelerated: Boolean,
         onProgress: (Int) -> Unit,
     ): Unit = withContext(Dispatchers.IO) {
         var lastError: Exception? = null
-        for (url in info.apkUrls(primaryMirror)) {
+        for (url in info.apkUrls(accelerated)) {
             try {
                 httpDownload(url, target, onProgress)
                 return@withContext
