@@ -5,6 +5,8 @@
     <!-- 设备使用信息上报（匿名统计，需用户同意后启用） -->
     <!-- 触觉反馈（底栏拖动 / 切换菜单的震动） -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 常驻状态通知（Android 13+ 需运行时授权） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- 应用内更新：下载新版本 APK 后拉起安装（Android 8.0+ 需用户授权「安装未知应用」） -->
@@ -74,6 +76,17 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_4x2_info" />
+        </receiver>
+        <!-- 常驻通知：与小组件共用分钟级广播，上课期间自动静默 -->
+        <receiver
+            android:name=".util.NotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.caoxian.schoolschedule.WIDGET_TICK" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
         </receiver>
     </application>
 

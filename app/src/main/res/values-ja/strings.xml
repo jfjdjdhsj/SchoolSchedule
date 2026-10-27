@@ -162,4 +162,7 @@
     <string name="settings_haptics_summary">バーのドラッグ・切替時の振動</string>
     <string name="settings_cdn_title">CDN 高速化</string>
     <string name="settings_cdn_summary">jsDelivr CDN で更新の確認とダウンロードを高速化（オフ = GitHub 公式）</string>
+    <string name="settings_notification_title">ステータス通知</string>
+    <string name="settings_notification_summary">通知バーに時間割の状態を表示。授業中は自動でサイレント、それ以外で通知</string>
+    <string name="notification_channel_name">ステータス通知</string>
 </resources>

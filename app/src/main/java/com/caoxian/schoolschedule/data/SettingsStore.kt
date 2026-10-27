@@ -116,6 +116,15 @@ class SettingsStore(context: Context) {
         }
 
     /**
+     * 常驻状态通知：上课期间自动静默，课间与其他时间提醒。
+     */
+    var notificationEnabled: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFICATION, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_NOTIFICATION, value).apply()
+        }
+
+    /**
      * 更新加速源：开启走 jsDelivr CDN（默认），关闭使用 GitHub 官方源。
      */
     var cdnAccelerated: Boolean
@@ -157,6 +166,7 @@ class SettingsStore(context: Context) {
         const val KEY_APP_LANGUAGE = "app_language"
         const val KEY_HAPTICS = "haptic_feedback_enabled"
         const val KEY_CDN = "cdn_accelerated"
+        const val KEY_NOTIFICATION = "status_notification"
 
         /** 应用语言取值：跟随系统 / 简体中文 / English / 繁體中文 */
         const val LANG_SYSTEM = "system"

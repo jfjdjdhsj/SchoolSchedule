@@ -185,4 +185,7 @@
     <string name="settings_haptics_summary">Vibration when dragging or switching bottom bar items</string>
     <string name="settings_cdn_title">CDN Acceleration</string>
     <string name="settings_cdn_summary">Use jsDelivr CDN for update checks and downloads; off = GitHub official</string>
+    <string name="settings_notification_title">Status Notification</string>
+    <string name="settings_notification_summary">Shows schedule status in the notification bar; silent during class, reminds at other times</string>
+    <string name="notification_channel_name">Status Notification</string>
 </resources>

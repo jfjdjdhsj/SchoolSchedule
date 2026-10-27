@@ -82,6 +82,7 @@ import com.caoxian.schoolschedule.util.currentMinutes
 import com.caoxian.schoolschedule.util.effectiveRound
 import com.caoxian.schoolschedule.util.fmtTime
 import com.caoxian.schoolschedule.util.Haptics
+import com.caoxian.schoolschedule.util.NotificationHelper
 import com.caoxian.schoolschedule.util.formatDuration
 import com.caoxian.schoolschedule.util.ScheduleI18n
 import com.caoxian.schoolschedule.util.visibleRounds
@@ -159,6 +160,7 @@ fun ScheduleScreen(
     var glassEngine by remember { mutableStateOf(settings.glassEngine) }
     var hapticsEnabled by remember { mutableStateOf(settings.hapticFeedbackEnabled) }
     var cdnEnabled by remember { mutableStateOf(settings.cdnAccelerated) }
+    var notificationEnabled by remember { mutableStateOf(settings.notificationEnabled) }
     val colorScheme = MiuixTheme.colorScheme
     val density = LocalDensity.current
     val context = LocalContext.current
@@ -429,6 +431,16 @@ fun ScheduleScreen(
                             onCdnChange = {
                                 cdnEnabled = it
                                 settings.cdnAccelerated = it
+                            },
+                            notificationEnabled = notificationEnabled,
+                            onNotificationChange = {
+                                notificationEnabled = it
+                                settings.notificationEnabled = it
+                                if (it) {
+                                    NotificationHelper.refresh(context)
+                                } else {
+                                    NotificationHelper.cancel(context)
+                                }
                             },
                             showAllRound = showAllRound,
                             onShowAllRoundToggle = {

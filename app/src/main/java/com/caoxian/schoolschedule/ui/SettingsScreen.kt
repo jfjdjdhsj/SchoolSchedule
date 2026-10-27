@@ -93,6 +93,8 @@ fun SettingsScreen(
     onHapticsChange: (Boolean) -> Unit,
     cdnAccelerated: Boolean,
     onCdnChange: (Boolean) -> Unit,
+    notificationEnabled: Boolean,
+    onNotificationChange: (Boolean) -> Unit,
     showAllRound: Boolean,
     onShowAllRoundToggle: (Boolean) -> Unit,
     themeMode: String,
@@ -206,6 +208,29 @@ fun SettingsScreen(
                     summary = stringResource(R.string.settings_show_all_round_summary),
                     checked = showAllRound,
                     onToggle = onShowAllRoundToggle,
+                )
+            }
+            // 常驻状态通知：上课期间静默，其他时间提醒
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                SettingRow(
+                    icon = MiuixIcons.Show,
+                    title = stringResource(R.string.settings_notification_title),
+                    summary = stringResource(R.string.settings_notification_summary),
+                    checked = notificationEnabled,
+                    onToggle = { enable ->
+                        if (enable && Build.VERSION.SDK_INT >= 33) {
+                            val activity = context as? Activity
+                            val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+                                context, android.Manifest.permission.POST_NOTIFICATIONS,
+                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                            if (!granted) {
+                                activity?.requestPermissions(
+                                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001,
+                                )
+                            }
+                        }
+                        onNotificationChange(enable)
+                    },
                 )
             }
             // 震动反馈：底栏拖动 / 切换菜单时的触觉反馈开关

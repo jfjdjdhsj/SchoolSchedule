@@ -162,4 +162,7 @@
     <string name="settings_haptics_summary">Вибрация при перетаскивании и переключении панели</string>
     <string name="settings_cdn_title">CDN-ускорение</string>
     <string name="settings_cdn_summary">jsDelivr CDN для проверки и загрузки обновлений; выкл = GitHub</string>
+    <string name="settings_notification_title">Постоянное уведомление</string>
+    <string name="settings_notification_summary">Статус расписания в шторке; тихо во время занятий, напоминания в остальное время</string>
+    <string name="notification_channel_name">Постоянное уведомление</string>
 </resources>

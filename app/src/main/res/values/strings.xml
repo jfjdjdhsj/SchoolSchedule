@@ -185,4 +185,7 @@
     <string name="settings_haptics_summary">底栏拖动、切换菜单时的触觉反馈</string>
     <string name="settings_cdn_title">加速源</string>
     <string name="settings_cdn_summary">开启使用 jsDelivr CDN 加速更新检查与下载；关闭使用 GitHub 官方源</string>
+    <string name="settings_notification_title">常驻状态通知</string>
+    <string name="settings_notification_summary">通知栏显示当前作息状态；上课期间自动静默，课间与其他时间提醒</string>
+    <string name="notification_channel_name">常驻状态通知</string>
 </resources>

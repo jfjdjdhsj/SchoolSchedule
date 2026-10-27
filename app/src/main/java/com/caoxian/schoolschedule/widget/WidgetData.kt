@@ -32,6 +32,8 @@ object WidgetData {
         val countdownPrefix: String?,
         /** 倒计时剩余秒数；由 Chronometer 在桌面端每秒自走，不依赖后台广播 */
         val countdownSec: Int?,
+        /** 是否处于上课 / 活动进行期间（通知在此期间静默） */
+        val inClass: Boolean = false,
     )
 
     fun build(context: Context): Texts {
@@ -56,9 +58,9 @@ object WidgetData {
             val latestEnd = current.maxOf { it.endForStatus }
             val remainSec = latestEnd * 60 - nowSec
             return if (current.any { it.endMinute != null } && remainSec > 0) {
-                Texts(state, times, context.getString(R.string.widget_countdown_class_over), remainSec)
+                Texts(state, times, context.getString(R.string.widget_countdown_class_over), remainSec, inClass = true)
             } else {
-                Texts(state, times, null, null)
+                Texts(state, times, null, null, inClass = true)
             }
         }
 
