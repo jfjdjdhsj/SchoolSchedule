@@ -1,5 +1,5 @@
 {
-  "versionCode": 49,
-  "versionName": "1.18.0",
-  "changelog": "1. 新增常驻状态通知（设置 → 显示，默认开启）：课间、即将上课、放学后提醒当前状态与倒计时；上课期间自动静默\n2. Android 13+ 首次开启会请求通知权限"
+  "versionCode": 50,
+  "versionName": "1.19.0",
+  "changelog": "1. 镜像源全面升级：jsDelivr / GitHub / ghfast / gh-proxy 四源可选\n2. 支持一键测速：自动并发测速并选择延迟最低的镜像，保存到本地下次直接使用\n3. 也可在弹窗中手动指定镜像；所有镜像互为下载兜底"
 }

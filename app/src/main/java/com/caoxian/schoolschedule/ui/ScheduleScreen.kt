@@ -159,7 +159,7 @@ fun ScheduleScreen(
     // 底栏玻璃引擎："prismal" / "miui" / "off"（设置页可切换）
     var glassEngine by remember { mutableStateOf(settings.glassEngine) }
     var hapticsEnabled by remember { mutableStateOf(settings.hapticFeedbackEnabled) }
-    var cdnEnabled by remember { mutableStateOf(settings.cdnAccelerated) }
+    var mirrorMode by remember { mutableStateOf(settings.mirrorMode) }
     var notificationEnabled by remember { mutableStateOf(settings.notificationEnabled) }
     val colorScheme = MiuixTheme.colorScheme
     val density = LocalDensity.current
@@ -427,10 +427,16 @@ fun ScheduleScreen(
                                 hapticsEnabled = it
                                 settings.hapticFeedbackEnabled = it
                             },
-                            cdnAccelerated = cdnEnabled,
-                            onCdnChange = {
-                                cdnEnabled = it
-                                settings.cdnAccelerated = it
+                            mirrorMode = mirrorMode,
+                            onMirrorModeChange = {
+                                mirrorMode = it
+                                settings.mirrorMode = it
+                            },
+                            onAutoSpeedTest = { onResult ->
+                                scope.launch {
+                                    val (best, results) = updateController.runSpeedTest()
+                                    onResult(best, results)
+                                }
                             },
                             notificationEnabled = notificationEnabled,
                             onNotificationChange = {

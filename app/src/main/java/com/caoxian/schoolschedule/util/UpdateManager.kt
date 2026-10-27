@@ -10,6 +10,8 @@ import androidx.core.content.FileProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,21 +35,11 @@ data class UpdateInfo(
     val assetUrl: String? = null,
 ) {
     /**
-     * APK 下载候选地址（按顺序尝试）：
-     * 加速源开启 → jsDelivr（按标签分发）→ Release 资产 / GitHub 官方；
-     * 加速源关闭 → Release 资产 / GitHub 官方。
+     * APK 下载候选地址：首选镜像优先，其余镜像兜底；Release 资产地址最后兜底。
      */
-    fun apkUrls(cdn: Boolean): List<String> {
-        val tag = "v$versionName"
-        return if (cdn) {
-            (UpdateConfig.releaseDownloadUrls(tag, cdn = true) +
-                listOfNotNull(assetUrl) +
-                UpdateConfig.releaseDownloadUrls(tag, cdn = false)).distinct()
-        } else {
-            (listOfNotNull(assetUrl) +
-                UpdateConfig.releaseDownloadUrls(tag, cdn = false)).distinct()
-        }
-    }
+    fun apkUrls(primaryMirror: String): List<String> =
+        UpdateConfig.releaseDownloadUrls("v$versionName", primaryMirror) +
+            listOfNotNull(assetUrl)
 }
 
 /** 更新日志条目（GitHub Release：版本 / 日期 / 说明） */
@@ -124,12 +116,35 @@ class UpdateController(private val context: Context) {
      * 检查更新。
      * @param silent 静默模式（进入应用自动检测）：无新版本 / 失败时不改变状态、不提示
      */
+    /** 实际生效的镜像：auto = 上次测速选出的最快源；否则为手动指定的镜像 */
+    private fun effectiveMirror(): String {
+        val s = SettingsStore(context)
+        return if (s.mirrorMode == UpdateConfig.MIRROR_AUTO) s.mirrorSaved else s.mirrorMode
+    }
+
+    /**
+     * 全镜像测速：并发请求各镜像 update.json，保存延迟并选出最快源。
+     *
+     * @return (最快镜像 ID, 各镜像延迟 ms)
+     */
+    suspend fun runSpeedTest(): Pair<String, Map<String, Long>> = withContext(Dispatchers.IO) {
+        val results = UpdateConfig.MIRRORS.map { id ->
+            async { id to UpdateChecker.testMirror(id) }
+        }.awaitAll().toMap()
+        val settings = SettingsStore(context)
+        results.forEach { (id, ms) -> settings.setMirrorLatency(id, ms.toInt()) }
+        val best = results.filterValues { it > 0 }.minByOrNull { it.value }?.key
+            ?: UpdateConfig.MIRROR_JSDELIVR
+        settings.mirrorSaved = best
+        best to results
+    }
+
     fun check(silent: Boolean) {
         if (state is UpdateState.Checking || state is UpdateState.Downloading) return
         state = UpdateState.Checking
         scope.launch {
             try {
-                val info = UpdateChecker.check(SettingsStore(context).cdnAccelerated)
+                val info = UpdateChecker.check(effectiveMirror())
                 if (isNewest(info)) {
                     if (!silent) state = UpdateState.Latest
                     else state = UpdateState.Idle
@@ -152,7 +167,7 @@ class UpdateController(private val context: Context) {
                 val dir = File(context.getExternalFilesDir("update") ?: File(context.filesDir, "update"), "")
                 dir.mkdirs()
                 val target = File(dir, "SchoolSchedule-${info.versionName}.apk")
-                UpdateChecker.downloadApk(info, target, SettingsStore(context).cdnAccelerated) { progress ->
+                UpdateChecker.downloadApk(info, target, effectiveMirror()) { progress ->
                     state = UpdateState.Downloading(progress)
                 }
                 state = UpdateState.ReadyToInstall(target)
@@ -210,32 +225,37 @@ object UpdateChecker {
      * 检查更新：优先 GitHub Releases API（含更新日志与 APK 资产地址）；
      * API 不可达时回退 update.json（jsDelivr → GitHub 直连）。全部失败抛异常。
      */
-    suspend fun check(cdn: Boolean): UpdateInfo = withContext(Dispatchers.IO) {
-        if (cdn) {
-            // 加速源开启：jsDelivr 国内响应最快，优先用 update.json 检查；
-            // 失败再试 GitHub API（慢），最后 raw 直连兜底
-            try {
-                return@withContext checkViaUpdateJson(cdn)
-            } catch (_: Exception) {
-            }
-            try {
-                return@withContext checkViaReleasesApi()
-            } catch (_: Exception) {
-            }
-            return@withContext checkViaUpdateJson(cdn = false)
+    suspend fun check(primaryMirror: String): UpdateInfo = withContext(Dispatchers.IO) {
+        // 镜像源优先（国内可达性最好），GitHub Releases API 兜底
+        try {
+            return@withContext checkViaUpdateJson(primaryMirror)
+        } catch (_: Exception) {
         }
         try {
             return@withContext checkViaReleasesApi()
         } catch (_: Exception) {
-            // 回退到 update.json
         }
-        return@withContext checkViaUpdateJson(cdn)
+        return@withContext checkViaUpdateJson(UpdateConfig.MIRROR_GITHUB)
+    }
+
+    /**
+     * 镜像测速：请求该镜像的 update.json 并测量耗时（ms）。
+     * 失败 / 超时返回 -1。
+     */
+    suspend fun testMirror(mirror: String): Long = withContext(Dispatchers.IO) {
+        val start = System.currentTimeMillis()
+        try {
+            httpGet(UpdateConfig.jsonProbeUrl(mirror)) ?: return@withContext -1
+            System.currentTimeMillis() - start
+        } catch (_: Exception) {
+            -1
+        }
     }
 
     /** update.json 检查：按候选地址顺序尝试（加速源开 = jsDelivr → raw；关 = raw） */
-    private suspend fun checkViaUpdateJson(cdn: Boolean): UpdateInfo = withContext(Dispatchers.IO) {
+    private suspend fun checkViaUpdateJson(primaryMirror: String): UpdateInfo = withContext(Dispatchers.IO) {
         var lastError: Exception? = null
-        for (url in UpdateConfig.updateJsonUrls(cdn)) {
+        for (url in UpdateConfig.updateJsonUrls(primaryMirror)) {
             try {
                 val body = httpGet(url) ?: continue
                 val json = JSONObject(body)
@@ -291,11 +311,11 @@ object UpdateChecker {
     suspend fun downloadApk(
         info: UpdateInfo,
         target: File,
-        cdn: Boolean,
+        primaryMirror: String,
         onProgress: (Int) -> Unit,
     ): Unit = withContext(Dispatchers.IO) {
         var lastError: Exception? = null
-        for (url in info.apkUrls(cdn)) {
+        for (url in info.apkUrls(primaryMirror)) {
             try {
                 httpDownload(url, target, onProgress)
                 return@withContext

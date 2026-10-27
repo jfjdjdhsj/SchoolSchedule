@@ -49,7 +49,7 @@
     <string name="update_install_now">Install now</string>
     <string name="update_download_complete">Update downloaded</string>
 
-    <!-- Privacy & stats -->
+    <!-- Privacy&amp; stats -->
     <string name="privacy_title">Privacy Policy &amp; Anonymous Statistics</string>
     <string name="privacy_intro">To understand how School Schedule is actually used, we would like to anonymously report the following while you use the app:</string>
     <string name="privacy_item_device">· Device info: model, brand, OS version, screen resolution</string>
@@ -183,9 +183,16 @@
     <string name="glass_style_off">Off</string>
     <string name="settings_haptics_title">Haptic Feedback</string>
     <string name="settings_haptics_summary">Vibration when dragging or switching bottom bar items</string>
-    <string name="settings_cdn_title">CDN Acceleration</string>
-    <string name="settings_cdn_summary">Use jsDelivr CDN for update checks and downloads; off = GitHub official</string>
     <string name="settings_notification_title">Status Notification</string>
     <string name="settings_notification_summary">Shows schedule status in the notification bar; silent during class, reminds at other times</string>
     <string name="notification_channel_name">Status Notification</string>
+    <string name="settings_mirror_title">Mirror Source</string>
+    <string name="settings_mirror_summary">Mirror for update checks and APK downloads; auto speed-test picks the fastest, or set manually</string>
+    <string name="mirror_speed_test">Speed-test&amp; pick fastest</string>
+    <string name="mirror_testing">Testing…</string>
+    <string name="mirror_auto_done">Fastest mirror saved; applies to next update</string>
+    <string name="mirror_test_failed">Speed test failed, check network</string>
+    <string name="mirror_timeout">Timeout</string>
+    <string name="mirror_auto">Auto (fastest by test)</string>
+    <string name="mirror_auto_summary">Uses the fastest mirror from the last speed test</string>
 </resources>
