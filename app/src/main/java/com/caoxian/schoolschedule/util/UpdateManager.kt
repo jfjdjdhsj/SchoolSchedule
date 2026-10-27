@@ -32,10 +32,21 @@ data class UpdateInfo(
     /** Release 资产下载地址；为 null 时按 tag 构造 */
     val assetUrl: String? = null,
 ) {
-    /** APK 下载候选地址（按加速源开关构造，依次尝试） */
+    /**
+     * APK 下载候选地址（按顺序尝试）：
+     * 加速源开启 → jsDelivr（按标签分发）→ Release 资产 / GitHub 官方；
+     * 加速源关闭 → Release 资产 / GitHub 官方。
+     */
     fun apkUrls(cdn: Boolean): List<String> {
-        assetUrl?.let { return listOf(it) }
-        return UpdateConfig.releaseDownloadUrls("v$versionName", cdn)
+        val tag = "v$versionName"
+        return if (cdn) {
+            (UpdateConfig.releaseDownloadUrls(tag, cdn = true) +
+                listOfNotNull(assetUrl) +
+                UpdateConfig.releaseDownloadUrls(tag, cdn = false)).distinct()
+        } else {
+            (listOfNotNull(assetUrl) +
+                UpdateConfig.releaseDownloadUrls(tag, cdn = false)).distinct()
+        }
     }
 }
 
@@ -200,11 +211,29 @@ object UpdateChecker {
      * API 不可达时回退 update.json（jsDelivr → GitHub 直连）。全部失败抛异常。
      */
     suspend fun check(cdn: Boolean): UpdateInfo = withContext(Dispatchers.IO) {
+        if (cdn) {
+            // 加速源开启：jsDelivr 国内响应最快，优先用 update.json 检查；
+            // 失败再试 GitHub API（慢），最后 raw 直连兜底
+            try {
+                return@withContext checkViaUpdateJson(cdn)
+            } catch (_: Exception) {
+            }
+            try {
+                return@withContext checkViaReleasesApi()
+            } catch (_: Exception) {
+            }
+            return@withContext checkViaUpdateJson(cdn = false)
+        }
         try {
             return@withContext checkViaReleasesApi()
         } catch (_: Exception) {
             // 回退到 update.json
         }
+        return@withContext checkViaUpdateJson(cdn)
+    }
+
+    /** update.json 检查：按候选地址顺序尝试（加速源开 = jsDelivr → raw；关 = raw） */
+    private suspend fun checkViaUpdateJson(cdn: Boolean): UpdateInfo = withContext(Dispatchers.IO) {
         var lastError: Exception? = null
         for (url in UpdateConfig.updateJsonUrls(cdn)) {
             try {

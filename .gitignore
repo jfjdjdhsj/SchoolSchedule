@@ -17,6 +17,7 @@ keystore/*.jks
 
 # 构建产物
 *.apk
+!SchoolSchedule-v*-release.apk
 *.aab
 *.ap_
 *.dex

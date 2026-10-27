@@ -1,5 +1,5 @@
 {
-  "versionCode": 47,
-  "versionName": "1.17.1",
-  "changelog": "1. 修复设置里缺失「加速源」开关的问题（v1.17.0 开关未正确插入界面）"
+  "versionCode": 48,
+  "versionName": "1.17.2",
+  "changelog": "1. 优化下载速度：修复加速源开启时仍直连 GitHub 下载的问题，jsDelivr 现在真正生效\n2. 优化检查更新响应：加速源开启时优先走 jsDelivr（秒级响应），GitHub API 改为回退"
 }
