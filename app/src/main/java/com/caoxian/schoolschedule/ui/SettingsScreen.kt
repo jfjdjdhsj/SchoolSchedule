@@ -258,6 +258,19 @@ fun SettingsScreen(
                     },
                 )
             }
+            // 加速源：jsDelivr CDN（默认开） / GitHub 官方
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                SettingRow(
+                    icon = MiuixIcons.Refresh,
+                    title = stringResource(R.string.settings_cdn_title),
+                    summary = stringResource(R.string.settings_cdn_summary),
+                    checked = cdnAccelerated,
+                    onToggle = {
+                        settings.cdnAccelerated = it
+                        onCdnChange(it)
+                    },
+                )
+            }
             Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 // 手动检测更新：点击立即检查，结果用 Toast / 弹窗提示
                 Row(

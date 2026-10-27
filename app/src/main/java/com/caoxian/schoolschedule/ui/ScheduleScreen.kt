@@ -158,6 +158,7 @@ fun ScheduleScreen(
     // 底栏玻璃引擎："prismal" / "miui" / "off"（设置页可切换）
     var glassEngine by remember { mutableStateOf(settings.glassEngine) }
     var hapticsEnabled by remember { mutableStateOf(settings.hapticFeedbackEnabled) }
+    var cdnEnabled by remember { mutableStateOf(settings.cdnAccelerated) }
     val colorScheme = MiuixTheme.colorScheme
     val density = LocalDensity.current
     val context = LocalContext.current
@@ -424,8 +425,11 @@ fun ScheduleScreen(
                                 hapticsEnabled = it
                                 settings.hapticFeedbackEnabled = it
                             },
-                            cdnAccelerated = settings.cdnAccelerated,
-                            onCdnChange = { settings.cdnAccelerated = it },
+                            cdnAccelerated = cdnEnabled,
+                            onCdnChange = {
+                                cdnEnabled = it
+                                settings.cdnAccelerated = it
+                            },
                             showAllRound = showAllRound,
                             onShowAllRoundToggle = {
                                 showAllRound = it
