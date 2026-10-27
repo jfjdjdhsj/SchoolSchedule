@@ -239,14 +239,22 @@ object UpdateChecker {
     }
 
     /**
-     * 镜像测速：请求该镜像的 update.json 并测量耗时（ms）。
+     * 镜像测速：TCP 连接测速（等效 ping，一个网络往返），2 秒超时。
      * 失败 / 超时返回 -1。
      */
     suspend fun testMirror(mirror: String): Long = withContext(Dispatchers.IO) {
+        val host = when (mirror) {
+            UpdateConfig.MIRROR_JSDELIVR -> "cdn.jsdelivr.net"
+            UpdateConfig.MIRROR_GHFAST -> "ghfast.top"
+            UpdateConfig.MIRROR_GHPROXY -> "gh-proxy.com"
+            else -> "raw.githubusercontent.com"
+        }
         val start = System.currentTimeMillis()
         try {
-            httpGet(UpdateConfig.jsonProbeUrl(mirror)) ?: return@withContext -1
-            System.currentTimeMillis() - start
+            java.net.Socket().use { socket ->
+                socket.connect(java.net.InetSocketAddress(host, 443), 2000)
+                System.currentTimeMillis() - start
+            }
         } catch (_: Exception) {
             -1
         }
